@@ -1,0 +1,33 @@
+package com.example.standtime.standtime.feature.components.style
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.standtime.R
+import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.standtime.localizedStringResource
+
+@Composable
+fun LuxuryClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(localizedStringResource(R.string.gallery_luxury_est, language), color = Color(0xFFD4AF37).copy(alpha = 0.4f), fontSize = 20.sp, letterSpacing = 8.sp)
+        Text(
+            text = "${parts.hours}:${parts.minutes}",
+            modifier = Modifier.padding(top = 24.dp).clip(RoundedCornerShape(8.dp)).background(Color.Transparent).padding(horizontal = 24.dp),
+            color = Color(0xFFD4AF37),
+            fontSize = 128.sp,
+            fontWeight = FontWeight.Light
+        )
+    }
+}

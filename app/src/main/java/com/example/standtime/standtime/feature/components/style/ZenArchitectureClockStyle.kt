@@ -1,0 +1,38 @@
+package com.example.standtime.standtime.feature.components.style
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.standtime.R
+import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.standtime.localizedStringResource
+
+@Composable
+fun ZenArchitectureClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(500.dp).clip(CircleShape).background(Color.Transparent))
+        Box(modifier = Modifier.size(700.dp).clip(CircleShape).background(Color.Transparent))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFFF4F4F5), fontSize = 128.sp, fontWeight = FontWeight.ExtraLight)
+            Row(modifier = Modifier.padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
+                Box(modifier = Modifier.size(width = 48.dp, height = 1.dp).background(Color(0xFF27272A)))
+                Text(localizedStringResource(R.string.gallery_zen_sanctuary, language), color = Color(0xFFA1A1AA), fontSize = 11.sp, letterSpacing = 6.sp)
+                Box(modifier = Modifier.size(width = 48.dp, height = 1.dp).background(Color(0xFF27272A)))
+            }
+        }
+    }
+}
