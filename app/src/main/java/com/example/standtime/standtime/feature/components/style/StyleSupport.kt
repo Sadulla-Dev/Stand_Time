@@ -3,13 +3,12 @@ package com.example.standtime.standtime.feature.components.style
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,14 +21,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
-import com.example.standtime.standtime.StandTimeUiState
+import com.example.standtime.standtime.feature.utils.StandTimeUiState
+import kotlin.math.min
 
 data class GalleryClockParts(
     val hours: String,
@@ -38,7 +36,10 @@ data class GalleryClockParts(
     val dayText: String,
     val dateText: String,
     val kanjiHours: String,
-    val kanjiMinutes: String
+    val kanjiMinutes: String,
+    val weatherTemperature: String,
+    val weatherSummary: String,
+    val locationName: String
 )
 
 fun StandTimeUiState.galleryParts(): GalleryClockParts {
@@ -53,7 +54,10 @@ fun StandTimeUiState.galleryParts(): GalleryClockParts {
         dayText = dayText,
         dateText = dateText,
         kanjiHours = hourPart.toKanji(),
-        kanjiMinutes = minutePart.toKanji()
+        kanjiMinutes = minutePart.toKanji(),
+        weatherTemperature = weatherTemperature,
+        weatherSummary = weatherSummary,
+        locationName = locationName
     )
 }
 
@@ -205,5 +209,34 @@ fun FlipBlock(value: String) {
             fontSize = 104.sp,
             fontWeight = FontWeight.Black
         )
+    }
+}
+
+@Composable
+fun ResponsiveGalleryFrame(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        // Use a phone-landscape reference canvas so gallery styles stay large.
+        // The previous canvas was too wide, which made everything look squeezed.
+        val baseWidth = 920f
+        val baseHeight = 360f
+        val scale = min(maxWidth.value / baseWidth, maxHeight.value / baseHeight)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(baseWidth.dp)
+                    .height(baseHeight.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                content = content
+            )
+        }
     }
 }

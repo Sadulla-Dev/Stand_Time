@@ -1,8 +1,11 @@
 package com.example.standtime.standtime
 
+import android.Manifest
 import android.content.Intent
 import android.content.res.Configuration
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,28 +35,45 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.standtime.R
+import com.example.standtime.standtime.feature.components.accentColor
+import com.example.standtime.standtime.feature.components.remainingPomodoroText
 import com.example.standtime.standtime.feature.components.style.GalleryClockContent as StyleGalleryClockContent
 import com.example.standtime.standtime.feature.components.style.galleryParts
 import com.example.standtime.standtime.feature.components.style.galleryStyleAt
 import com.example.standtime.standtime.feature.components.style.galleryStyleCount
+import com.example.standtime.standtime.feature.utils.AccentPalette
+import com.example.standtime.standtime.feature.utils.CalendarDayCell
+import com.example.standtime.standtime.feature.utils.StandTimeIntent
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.StandTimeUiState
+import com.example.standtime.standtime.feature.utils.ThemeMode
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 import com.example.standtime.ui.theme.CoralAccent
 import com.example.standtime.ui.theme.LimeAccent
 import com.example.standtime.ui.theme.SkyAccent
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Root
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun StandTimeRoute(
@@ -65,13 +84,42 @@ fun StandTimeRoute(
     val language = state.language
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val accentColor = state.accentColor()
+
+    var hasRequestedLocationPermission by rememberSaveable { mutableStateOf(false) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { grantResults ->
+        val granted = grantResults.values.any { it }
+        hasRequestedLocationPermission = true
+        onIntent(StandTimeIntent.LocationPermissionChanged(granted))
+        if (granted) onIntent(StandTimeIntent.RefreshWeather)
+    }
+    val requestLocationPermission = remember(locationPermissionLauncher, onIntent) {
+        {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(state.locationPermissionGranted, hasRequestedLocationPermission) {
+        if (!state.locationPermissionGranted && !hasRequestedLocationPermission) {
+            hasRequestedLocationPermission = true
+            requestLocationPermission()
+        }
+    }
+
     val background = Brush.radialGradient(
         colors = listOf(
-            accentColor.copy(alpha = if (state.themeMode == ThemeMode.DARK) 0.32f else 0.20f),
+            accentColor.copy(alpha = if (state.themeMode == ThemeMode.DARK) 0.28f else 0.16f),
             MaterialTheme.colorScheme.background,
             MaterialTheme.colorScheme.surface
         )
     )
+
     val rootPagerState = rememberPagerState(pageCount = { 3 })
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -84,52 +132,52 @@ fun StandTimeRoute(
                 state = rootPagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                Box(
-                    modifier = if (page == 0) {
-                        Modifier.fillMaxSize()
-                    } else {
-                        Modifier
-                            .fillMaxSize()
-                            .padding(20.dp)
-                    }
-                ) {
-                    when (page) {
-                        0 -> ClockStylesPage(
-                            state = state,
-                            language = language,
-                            accentColor = accentColor,
-                            onIntent = onIntent
-                        )
-                        1 -> DashboardPage(
-                            state = state,
-                            language = language,
-                            accentColor = accentColor,
-                            onIntent = onIntent,
-                            isLandscape = isLandscape
-                        )
-                        else -> SetupPage(
-                            state = state,
-                            language = language,
-                            accentColor = accentColor,
-                            onIntent = onIntent
-                        )
-                    }
+                when (page) {
+                    // ── Page 0: full‑screen gallery clock picker ──────────────
+                    0 -> ClockStylesPage(
+                        state = state,
+                        language = language,
+                        accentColor = accentColor,
+                        onIntent = onIntent
+                    )
+                    // ── Page 1: dashboard with gallery clock panel ────────────
+                    1 -> DashboardPage(
+                        state = state,
+                        language = language,
+                        accentColor = accentColor,
+                        onIntent = onIntent,
+                        onRequestLocationPermission = requestLocationPermission,
+                        isLandscape = isLandscape
+                    )
+                    // ── Page 2: settings ──────────────────────────────────────
+                    else -> SetupPage(
+                        state = state,
+                        language = language,
+                        accentColor = accentColor,
+                        onIntent = onIntent,
+                        onRequestLocationPermission = requestLocationPermission
+                    )
                 }
             }
 
+            // Floating nav indicator — only on page 1 & 2
             if (rootPagerState.currentPage != 0) {
-                PagerHeader(
+                PageIndicatorBar(
                     currentPage = rootPagerState.currentPage,
                     language = language,
                     accentColor = accentColor,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 4.dp)
+                        .padding(top = 6.dp)
                 )
             }
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page 0 — Clock Styles Gallery (full‑screen vertical pager)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ClockStylesPage(
@@ -141,16 +189,21 @@ private fun ClockStylesPage(
     val stylesCount = galleryStyleCount
     val parts = state.galleryParts()
     val galleryPagerState = rememberPagerState(pageCount = { stylesCount })
-    val currentStyleIndex = galleryPagerState.currentPage
-    val currentStyle = galleryStyleAt(currentStyleIndex)
+    val currentIndex = galleryPagerState.currentPage
+    val currentStyle = galleryStyleAt(currentIndex)
     val styleName = localizedStringResource(currentStyle.nameRes, language)
+
+    // Persist selected style to state
+    LaunchedEffect(currentIndex) {
+        onIntent(StandTimeIntent.ChangeGalleryStyleIndex(currentIndex))
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(0.dp))
             .background(currentStyle.background)
     ) {
+        // Full‑screen vertical pager — each page IS the clock style
         VerticalPager(
             state = galleryPagerState,
             modifier = Modifier.fillMaxSize()
@@ -171,10 +224,11 @@ private fun ClockStylesPage(
             }
         }
 
+        // ── Top overlay: battery + style counter ──────────────────────────
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(horizontal = 24.dp, vertical = 18.dp)
+                .padding(horizontal = 24.dp, vertical = 20.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -185,51 +239,57 @@ private fun ClockStylesPage(
                     language,
                     state.batteryLevel
                 ),
-                style = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.sp
-                ),
-                color = currentStyle.overlayColor
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 1.2.sp,
+                color = currentStyle.overlayColor.copy(alpha = 0.75f)
             )
             Text(
                 text = localizedStringResource(
                     R.string.gallery_style_counter,
                     language,
                     styleName,
-                    currentStyleIndex + 1,
+                    currentIndex + 1,
                     stylesCount
                 ),
-                style = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.sp
-                ),
-                color = currentStyle.overlayColor
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Medium,
+                fontSize = 11.sp,
+                letterSpacing = 1.2.sp,
+                color = currentStyle.overlayColor.copy(alpha = 0.75f)
             )
         }
 
+        // ── Bottom overlay: scroll progress dots ──────────────────────────
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 18.dp)
+                .padding(bottom = 24.dp)
                 .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(stylesCount) { index ->
                 Box(
                     modifier = Modifier
-                        .width(if (index == currentStyleIndex) 24.dp else 8.dp)
-                        .height(6.dp)
+                        .width(if (index == currentIndex) 22.dp else 6.dp)
+                        .height(5.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(currentStyle.overlayColor.copy(alpha = if (index == currentStyleIndex) 1f else 0.3f))
+                        .background(
+                            currentStyle.overlayColor.copy(
+                                alpha = if (index == currentIndex) 0.95f else 0.25f
+                            )
+                        )
                 )
             }
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page 1 — Dashboard
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun DashboardPage(
@@ -237,93 +297,134 @@ private fun DashboardPage(
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit,
     isLandscape: Boolean
 ) {
     if (isLandscape) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 44.dp),
-            horizontalArrangement = Arrangement.spacedBy(18.dp)
+                .padding(top = 48.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ClockPanel(
-                state = state,
-                language = language,
-                accentColor = accentColor,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-            SwipePanel(
+            // Left: gallery clock panel (same styles as page 0)
+            GalleryClockPanel(
                 state = state,
                 language = language,
                 accentColor = accentColor,
                 onIntent = onIntent,
                 modifier = Modifier
-                    .weight(1.08f)
+                    .weight(1f)
+                    .fillMaxHeight()
+            )
+            // Right: swipeable info panels
+            InfoPanelStack(
+                state = state,
+                language = language,
+                accentColor = accentColor,
+                onIntent = onIntent,
+                onRequestLocationPermission = onRequestLocationPermission,
+                modifier = Modifier
+                    .weight(1.05f)
                     .fillMaxHeight()
             )
         }
     } else {
-            PortraitFallback(
-                state = state,
-                language = language,
-            accentColor = accentColor,
-            onIntent = onIntent,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 44.dp)
-        )
-    }
-}
-
-@Composable
-private fun SetupPage(
-    state: StandTimeUiState,
-    language: StandTimeLanguage,
-    accentColor: Color,
-    onIntent: (StandTimeIntent) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 44.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = localizedStringResource(R.string.setup_label, language),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = localizedStringResource(R.string.swipe_styles_hint, language),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        CustomizeCard(
+        PortraitDashboard(
             state = state,
             language = language,
             accentColor = accentColor,
-            onIntent = onIntent
+            onIntent = onIntent,
+            onRequestLocationPermission = onRequestLocationPermission,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 48.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
         )
     }
 }
 
+// ── Gallery clock panel for Dashboard ────────────────────────────────────────
+
+/**
+ * Shows the same gallery clock styles as page 0 inside a rounded card.
+ * User swipes vertically to browse & implicitly select a style.
+ * The clock's own background fills the card — no extra tinting applied.
+ */
 @Composable
-private fun SwipePanel(
+private fun GalleryClockPanel(
     state: StandTimeUiState,
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val stylesCount = galleryStyleCount
+    val parts = state.galleryParts()
+    // Keep pager in sync with the selected style from page 0
+    val initialPage = state.selectedGalleryStyleIndex.coerceIn(0, stylesCount - 1)
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { stylesCount })
+    val currentIndex = pagerState.currentPage
+    val currentStyle = galleryStyleAt(currentIndex)
+
+    LaunchedEffect(currentIndex) {
+        onIntent(StandTimeIntent.ChangeGalleryStyleIndex(currentIndex))
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(28.dp))
+            // Let the clock's own background show through
+            .background(currentStyle.background)
+    ) {
+        VerticalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            val pageStyle = galleryStyleAt(page)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(pageStyle.background)
+            ) {
+                StyleGalleryClockContent(
+                    index = page,
+                    parts = parts,
+                    language = language,
+                    accentColor = accentColor,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Subtle style name label at bottom
+        Text(
+            text = localizedStringResource(currentStyle.nameRes, language),
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Medium,
+            fontSize = 10.sp,
+            letterSpacing = 1.5.sp,
+            color = currentStyle.overlayColor.copy(alpha = 0.55f),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 14.dp)
+        )
+    }
+}
+
+// ── Info panels (calendar / weather / pomodoro / media) ──────────────────────
+
+@Composable
+private fun InfoPanelStack(
+    state: StandTimeUiState,
+    language: StandTimeLanguage,
+    accentColor: Color,
+    onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val pages = buildList<DashboardPanel> {
         if (state.showCalendar) add(DashboardPanel.Calendar)
+        if (state.showWeather) add(DashboardPanel.Weather)
         if (state.showPomodoro) add(DashboardPanel.Pomodoro)
         add(DashboardPanel.Media)
     }
@@ -331,294 +432,350 @@ private fun SwipePanel(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = localizedStringResource(R.string.swipe_vertical_hint, language),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // Swipe hint + dot indicator
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = localizedStringResource(R.string.swipe_vertical_hint, language),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            repeat(pages.size) { i ->
+                Box(
+                    modifier = Modifier
+                        .size(if (i == pagerState.currentPage) 7.dp else 5.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (i == pagerState.currentPage) accentColor
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
+
         VerticalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (pages[page]) {
-                DashboardPanel.Calendar -> CalendarCard(
-                    state = state,
-                    language = language,
-                    accentColor = accentColor
+                DashboardPanel.Calendar -> CalendarCard(state, language, accentColor)
+                DashboardPanel.Weather -> WeatherCard(
+                    state, language, accentColor, onIntent, onRequestLocationPermission
                 )
-                DashboardPanel.Pomodoro -> PomodoroCard(
-                    state = state,
-                    language = language,
-                    accentColor = accentColor,
-                    onIntent = onIntent
-                )
-                DashboardPanel.Media -> MediaCard(
-                    state = state,
-                    language = language,
-                    accentColor = accentColor,
-                    onIntent = onIntent
-                )
+                DashboardPanel.Pomodoro -> PomodoroCard(state, language, accentColor, onIntent)
+                DashboardPanel.Media -> MediaCard(state, language, accentColor, onIntent)
             }
         }
     }
 }
 
-@Composable
-private fun ClockPanel(
-    state: StandTimeUiState,
-    language: StandTimeLanguage,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    val statusText = if (state.isCharging) {
-        localizedStringResource(R.string.charging_label, language)
-    } else {
-        localizedStringResource(R.string.battery_idle_label, language)
-    }
-    val batteryProgress = state.batteryLevel / 100f
-
-    PanelCard(modifier = modifier, accentColor = accentColor) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    AccentDot(accentColor = accentColor)
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                ClockFace(
-                    style = state.clockStyle,
-                    state = state,
-                    accentColor = accentColor,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    text = localizedStringResource(R.string.swipe_setup_hint, language),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = accentColor
-                )
-            }
-
-            if (state.showBattery) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = localizedStringResource(R.string.battery_status, language, state.batteryLevel),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    LinearProgressIndicator(
-                        progress = { batteryProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(14.dp)
-                            .clip(RoundedCornerShape(50)),
-                        color = accentColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    Text(
-                        text = localizedStringResource(R.string.orientation_hint, language),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
+// ── Portrait fallback for dashboard ──────────────────────────────────────────
 
 @Composable
-private fun ClockFace(
-    style: ClockStyle,
-    state: StandTimeUiState,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    when (style) {
-        ClockStyle.NOTHING -> Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = state.timeText,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 68.sp,
-                    letterSpacing = (-2).sp,
-                    lineHeight = 70.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AccentDot(accentColor = accentColor)
-                Text(
-                    text = state.dayText,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(
-                text = state.dateText,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        ClockStyle.PIXEL -> Column(
-            modifier = modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(accentColor.copy(alpha = 0.10f))
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = state.timeText,
-                style = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 56.sp,
-                    letterSpacing = 1.sp
-                ),
-                color = accentColor
-            )
-            Text(
-                text = state.dayText.uppercase(),
-                style = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = state.dateText,
-                style = TextStyle(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 16.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        ClockStyle.IPHONE -> Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = state.timeText,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 82.sp,
-                    lineHeight = 84.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "${state.dayText}, ${state.dateText}",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        ClockStyle.MINIMAL -> Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Text(
-                text = state.timeText,
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 60.sp,
-                    lineHeight = 62.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = state.dayText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "•",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = accentColor
-                )
-                Text(
-                    text = state.dateText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PortraitFallback(
+private fun PortraitDashboard(
     state: StandTimeUiState,
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = localizedStringResource(R.string.portrait_title, language),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = localizedStringResource(R.string.portrait_body, language),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                ClockFace(
-                    style = state.clockStyle,
-                    state = state,
-                    accentColor = accentColor,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-        CalendarCard(state = state, language = language, accentColor = accentColor)
-        if (state.showPomodoro) {
-            PomodoroCard(
-                state = state,
-                language = language,
-                accentColor = accentColor,
-                onIntent = onIntent
-            )
-        }
-        MediaCard(
+        // Gallery clock card (portrait: fixed height)
+        GalleryClockPanel(
             state = state,
             language = language,
             accentColor = accentColor,
-            onIntent = onIntent
+            onIntent = onIntent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
         )
+
+        CalendarCard(state, language, accentColor)
+
+        if (state.showWeather) {
+            WeatherCard(state, language, accentColor, onIntent, onRequestLocationPermission)
+        }
+        if (state.showPomodoro) {
+            PomodoroCard(state, language, accentColor, onIntent)
+        }
+        MediaCard(state, language, accentColor, onIntent)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page 2 — Setup / Settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SetupPage(
+    state: StandTimeUiState,
+    language: StandTimeLanguage,
+    accentColor: Color,
+    onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 48.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Header
+        PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = localizedStringResource(R.string.setup_label, language),
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = localizedStringResource(R.string.swipe_styles_hint, language),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // All settings in one card
+        SettingsCard(
+            state = state,
+            language = language,
+            accentColor = accentColor,
+            onIntent = onIntent,
+            onRequestLocationPermission = onRequestLocationPermission
+        )
+    }
+}
+
+@Composable
+private fun SettingsCard(
+    state: StandTimeUiState,
+    language: StandTimeLanguage,
+    accentColor: Color,
+    onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit
+) {
+    PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+
+            // ── Language ──────────────────────────────────────────────────
+            SettingSection(
+                title = localizedStringResource(R.string.language_title, language)
+            ) {
+                ChipRow {
+                    LanguageChip(
+                        selected = state.language == StandTimeLanguage.ENGLISH,
+                        label = "English",
+                        onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.ENGLISH)) }
+                    )
+                    LanguageChip(
+                        selected = state.language == StandTimeLanguage.UZBEK,
+                        label = "O'zbek",
+                        onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.UZBEK)) }
+                    )
+                    LanguageChip(
+                        selected = state.language == StandTimeLanguage.RUSSIAN,
+                        label = "Русский",
+                        onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.RUSSIAN)) }
+                    )
+                }
+            }
+
+            // ── Theme ─────────────────────────────────────────────────────
+            SettingSection(
+                title = localizedStringResource(R.string.theme_title, language)
+            ) {
+                ChipRow {
+                    FilterChip(
+                        selected = state.themeMode == ThemeMode.DARK,
+                        onClick = { if (state.themeMode != ThemeMode.DARK) onIntent(StandTimeIntent.ToggleTheme) },
+                        label = { Text(localizedStringResource(R.string.dark_theme_label, language)) }
+                    )
+                    FilterChip(
+                        selected = state.themeMode == ThemeMode.LIGHT,
+                        onClick = { if (state.themeMode != ThemeMode.LIGHT) onIntent(StandTimeIntent.ToggleTheme) },
+                        label = { Text(localizedStringResource(R.string.light_theme_label, language)) }
+                    )
+                }
+            }
+
+            // ── Accent colour ─────────────────────────────────────────────
+            SettingSection(
+                title = localizedStringResource(R.string.accent_title, language)
+            ) {
+                ChipRow {
+                    AccentChip(
+                        label = localizedStringResource(R.string.accent_lime_label, language),
+                        color = LimeAccent,
+                        selected = state.accentPalette == AccentPalette.LIME,
+                        onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.LIME)) }
+                    )
+                    AccentChip(
+                        label = localizedStringResource(R.string.accent_sky_label, language),
+                        color = SkyAccent,
+                        selected = state.accentPalette == AccentPalette.SKY,
+                        onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.SKY)) }
+                    )
+                    AccentChip(
+                        label = localizedStringResource(R.string.accent_coral_label, language),
+                        color = CoralAccent,
+                        selected = state.accentPalette == AccentPalette.CORAL,
+                        onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.CORAL)) }
+                    )
+                }
+            }
+
+            // ── Widgets toggle ────────────────────────────────────────────
+            SettingSection(
+                title = localizedStringResource(R.string.customize_title, language)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SettingRow(
+                        label = localizedStringResource(R.string.show_calendar_label, language),
+                        checked = state.showCalendar,
+                        onCheckedChange = { onIntent(StandTimeIntent.ToggleCalendar) }
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.show_weather_label, language),
+                        checked = state.showWeather,
+                        onCheckedChange = { onIntent(StandTimeIntent.ToggleWeather) }
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.show_battery_label, language),
+                        checked = state.showBattery,
+                        onCheckedChange = { onIntent(StandTimeIntent.ToggleBattery) }
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.show_pomodoro_label, language),
+                        checked = state.showPomodoro,
+                        onCheckedChange = { onIntent(StandTimeIntent.TogglePomodoro) }
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.show_seconds_label, language),
+                        checked = state.showSeconds,
+                        onCheckedChange = { onIntent(StandTimeIntent.ToggleSeconds) }
+                    )
+                }
+            }
+
+            // ── Location / weather refresh ────────────────────────────────
+            if (!state.locationPermissionGranted) {
+                Button(
+                    onClick = onRequestLocationPermission,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(localizedStringResource(R.string.weather_enable_location, language))
+                }
+            } else {
+                FilterChip(
+                    selected = false,
+                    onClick = { onIntent(StandTimeIntent.RefreshWeather) },
+                    label = { Text(localizedStringResource(R.string.weather_refresh, language)) }
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Info cards
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun WeatherCard(
+    state: StandTimeUiState,
+    language: StandTimeLanguage,
+    accentColor: Color,
+    onIntent: (StandTimeIntent) -> Unit,
+    onRequestLocationPermission: () -> Unit
+) {
+    PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxSize()) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(
+                text = localizedStringResource(R.string.weather_title, language),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            when {
+                !state.locationPermissionGranted -> {
+                    Text(
+                        text = localizedStringResource(R.string.weather_permission_body, language),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(onClick = onRequestLocationPermission) {
+                        Text(localizedStringResource(R.string.weather_enable_location, language))
+                    }
+                }
+                state.isWeatherLoading -> {
+                    Text(
+                        text = localizedStringResource(R.string.weather_loading, language),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                state.weatherError.isNotBlank() -> {
+                    Text(
+                        text = state.weatherError,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FilterChip(
+                        selected = false,
+                        onClick = { onIntent(StandTimeIntent.RefreshWeather) },
+                        label = { Text(localizedStringResource(R.string.weather_refresh, language)) }
+                    )
+                }
+                else -> {
+                    Text(
+                        text = state.locationName.ifBlank {
+                            localizedStringResource(R.string.weather_location_unknown, language)
+                        },
+                        style = MaterialTheme.typography.titleLarge,
+                        color = accentColor
+                    )
+                    Text(
+                        text = state.weatherTemperature.ifBlank { "--" },
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = state.weatherSummary.ifBlank {
+                            localizedStringResource(R.string.weather_unavailable, language)
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (state.weatherWind.isNotBlank()) {
+                        Text(
+                            text = localizedStringResource(
+                                R.string.weather_wind_value,
+                                language,
+                                state.weatherWind
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    FilterChip(
+                        selected = false,
+                        onClick = { onIntent(StandTimeIntent.RefreshWeather) },
+                        label = { Text(localizedStringResource(R.string.weather_refresh, language)) }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -629,15 +786,15 @@ private fun CalendarCard(
     accentColor: Color
 ) {
     PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(
                 text = localizedStringResource(R.string.calendar_title, language),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = state.monthTitle,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = accentColor
             )
             CalendarGrid(
@@ -655,7 +812,7 @@ private fun CalendarGrid(
     cells: List<CalendarDayCell>,
     accentColor: Color
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         CalendarRow {
             weekDayLabels.forEach { label ->
                 CalendarTextCell(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -666,12 +823,10 @@ private fun CalendarGrid(
                 week.forEach { cell ->
                     CalendarTextCell(
                         text = cell.label,
-                        color = if (cell.isCurrentMonth) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-                        },
-                        backgroundColor = if (cell.isToday) accentColor.copy(alpha = 0.20f) else Color.Transparent
+                        color = if (cell.isCurrentMonth) MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                        backgroundColor = if (cell.isToday) accentColor.copy(alpha = 0.20f)
+                        else Color.Transparent
                     )
                 }
             }
@@ -683,7 +838,7 @@ private fun CalendarGrid(
 private fun CalendarRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         content = content
     )
 }
@@ -697,15 +852,15 @@ private fun RowScope.CalendarTextCell(
     Box(
         modifier = Modifier
             .weight(1f)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = color,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
     }
@@ -722,27 +877,21 @@ private fun PomodoroCard(
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(
                 text = localizedStringResource(R.string.pomodoro_title, language),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = state.remainingPomodoroText(),
-                style = MaterialTheme.typography.displayMedium,
+                style = MaterialTheme.typography.displaySmall,
                 color = accentColor
             )
             Text(
-                text = if (state.isPomodoroRunning) {
+                text = if (state.isPomodoroRunning)
                     localizedStringResource(R.string.pomodoro_running, language)
-                } else {
-                    localizedStringResource(R.string.pomodoro_paused, language)
-                },
-                style = MaterialTheme.typography.bodyLarge,
+                else
+                    localizedStringResource(R.string.pomodoro_paused, language),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = localizedStringResource(R.string.presets_title, language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
             )
             ChipRow {
                 state.pomodoroPresets.forEach { preset ->
@@ -767,11 +916,10 @@ private fun PomodoroCard(
                     onClick = { onIntent(StandTimeIntent.TogglePomodoroTimer) },
                     label = {
                         Text(
-                            if (state.isPomodoroRunning) {
+                            if (state.isPomodoroRunning)
                                 localizedStringResource(R.string.pomodoro_pause, language)
-                            } else {
+                            else
                                 localizedStringResource(R.string.pomodoro_start, language)
-                            }
                         )
                     }
                 )
@@ -793,15 +941,13 @@ private fun MediaCard(
     onIntent: (StandTimeIntent) -> Unit
 ) {
     val context = LocalContext.current
-
     PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxSize()) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(
                 text = localizedStringResource(R.string.media_title, language),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-
             if (!state.mediaPermissionGranted) {
                 Text(
                     text = localizedStringResource(R.string.media_permission_body, language),
@@ -829,18 +975,20 @@ private fun MediaCard(
                     text = state.mediaTitle.ifBlank {
                         localizedStringResource(R.string.media_title, language)
                     },
-                    style = MaterialTheme.typography.displayMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = accentColor
                 )
                 Text(
                     text = state.mediaSubtitle.ifBlank {
                         localizedStringResource(R.string.media_source_value, language, state.mediaAppName)
                     },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = localizedStringResource(R.string.media_source_value, language, state.mediaAppName),
+                    text = localizedStringResource(
+                        R.string.media_source_value, language, state.mediaAppName
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -850,11 +998,10 @@ private fun MediaCard(
                         onClick = { onIntent(StandTimeIntent.ToggleMediaPlayback) },
                         label = {
                             Text(
-                                if (state.isMediaPlaying) {
+                                if (state.isMediaPlaying)
                                     localizedStringResource(R.string.media_pause, language)
-                                } else {
+                                else
                                     localizedStringResource(R.string.media_play, language)
-                                }
                             )
                         }
                     )
@@ -869,170 +1016,94 @@ private fun MediaCard(
     }
 }
 
-@Composable
-private fun CustomizeCard(
-    state: StandTimeUiState,
-    language: StandTimeLanguage,
-    accentColor: Color,
-    onIntent: (StandTimeIntent) -> Unit
-) {
-    PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                text = localizedStringResource(R.string.customize_title, language),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = localizedStringResource(R.string.language_title, language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            ChipRow {
-                LanguageChip(
-                    selected = state.language == StandTimeLanguage.ENGLISH,
-                    label = "English",
-                    onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.ENGLISH)) }
-                )
-                LanguageChip(
-                    selected = state.language == StandTimeLanguage.UZBEK,
-                    label = "O'zbek",
-                    onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.UZBEK)) }
-                )
-                LanguageChip(
-                    selected = state.language == StandTimeLanguage.RUSSIAN,
-                    label = "Русский",
-                    onClick = { onIntent(StandTimeIntent.ChangeLanguage(StandTimeLanguage.RUSSIAN)) }
-                )
-            }
-
-            Text(
-                text = localizedStringResource(R.string.theme_title, language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            ChipRow {
-                FilterChip(
-                    selected = state.themeMode == ThemeMode.DARK,
-                    onClick = { if (state.themeMode != ThemeMode.DARK) onIntent(StandTimeIntent.ToggleTheme) },
-                    label = { Text(localizedStringResource(R.string.dark_theme_label, language)) }
-                )
-                FilterChip(
-                    selected = state.themeMode == ThemeMode.LIGHT,
-                    onClick = { if (state.themeMode != ThemeMode.LIGHT) onIntent(StandTimeIntent.ToggleTheme) },
-                    label = { Text(localizedStringResource(R.string.light_theme_label, language)) }
-                )
-            }
-
-            Text(
-                text = localizedStringResource(R.string.accent_title, language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            ChipRow {
-                AccentChip(
-                    label = localizedStringResource(R.string.accent_lime_label, language),
-                    color = LimeAccent,
-                    selected = state.accentPalette == AccentPalette.LIME,
-                    onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.LIME)) }
-                )
-                AccentChip(
-                    label = localizedStringResource(R.string.accent_sky_label, language),
-                    color = SkyAccent,
-                    selected = state.accentPalette == AccentPalette.SKY,
-                    onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.SKY)) }
-                )
-                AccentChip(
-                    label = localizedStringResource(R.string.accent_coral_label, language),
-                    color = CoralAccent,
-                    selected = state.accentPalette == AccentPalette.CORAL,
-                    onClick = { onIntent(StandTimeIntent.ChangeAccent(AccentPalette.CORAL)) }
-                )
-            }
-
-            Text(
-                text = localizedStringResource(R.string.clock_style_title, language),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            ChipRow {
-                FilterChip(
-                    selected = state.clockStyle == ClockStyle.NOTHING,
-                    onClick = { onIntent(StandTimeIntent.ChangeClockStyle(ClockStyle.NOTHING)) },
-                    label = { Text(localizedStringResource(R.string.nothing_style_label, language)) }
-                )
-                FilterChip(
-                    selected = state.clockStyle == ClockStyle.PIXEL,
-                    onClick = { onIntent(StandTimeIntent.ChangeClockStyle(ClockStyle.PIXEL)) },
-                    label = { Text(localizedStringResource(R.string.pixel_style_label, language)) }
-                )
-                FilterChip(
-                    selected = state.clockStyle == ClockStyle.IPHONE,
-                    onClick = { onIntent(StandTimeIntent.ChangeClockStyle(ClockStyle.IPHONE)) },
-                    label = { Text(localizedStringResource(R.string.iphone_style_label, language)) }
-                )
-                FilterChip(
-                    selected = state.clockStyle == ClockStyle.MINIMAL,
-                    onClick = { onIntent(StandTimeIntent.ChangeClockStyle(ClockStyle.MINIMAL)) },
-                    label = { Text(localizedStringResource(R.string.minimal_style_label, language)) }
-                )
-            }
-
-            SettingRow(
-                label = localizedStringResource(R.string.show_calendar_label, language),
-                checked = state.showCalendar,
-                onCheckedChange = { onIntent(StandTimeIntent.ToggleCalendar) }
-            )
-            SettingRow(
-                label = localizedStringResource(R.string.show_battery_label, language),
-                checked = state.showBattery,
-                onCheckedChange = { onIntent(StandTimeIntent.ToggleBattery) }
-            )
-            SettingRow(
-                label = localizedStringResource(R.string.show_pomodoro_label, language),
-                checked = state.showPomodoro,
-                onCheckedChange = { onIntent(StandTimeIntent.TogglePomodoro) }
-            )
-            SettingRow(
-                label = localizedStringResource(R.string.show_seconds_label, language),
-                checked = state.showSeconds,
-                onCheckedChange = { onIntent(StandTimeIntent.ToggleSeconds) }
-            )
-        }
-    }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared UI atoms
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PagerHeader(
+private fun PageIndicatorBar(
     currentPage: Int,
     language: StandTimeLanguage,
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
     val label = when (currentPage) {
-        0 -> localizedStringResource(R.string.clock_styles_label, language)
         1 -> localizedStringResource(R.string.dashboard_label, language)
         else -> localizedStringResource(R.string.setup_label, language)
     }
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
         repeat(3) { index ->
             Box(
                 modifier = Modifier
-                    .size(if (index == currentPage) 10.dp else 8.dp)
+                    .size(if (index == currentPage) 9.dp else 6.dp)
                     .clip(CircleShape)
-                    .background(if (index == currentPage) accentColor else MaterialTheme.colorScheme.surfaceVariant)
+                    .background(
+                        if (index == currentPage) accentColor
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
             )
         }
+    }
+}
+
+/**
+ * Unified card shell used by all info cards and settings on pages 1 & 2.
+ * Keeps visual language consistent with a subtle accent tint.
+ */
+@Composable
+private fun PanelCard(
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        tonalElevation = 8.dp,
+        shadowElevation = 2.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            accentColor.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.0f)
+                        )
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SettingSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            letterSpacing = 0.5.sp
+        )
+        content()
     }
 }
 
@@ -1057,37 +1128,6 @@ private fun SettingRow(
 }
 
 @Composable
-private fun PanelCard(
-    accentColor: Color,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(30.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-        tonalElevation = 10.dp,
-        shadowElevation = 4.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.10f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-                        )
-                    )
-                )
-                .padding(22.dp)
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
 private fun AccentChip(
     label: String,
     color: Color,
@@ -1100,11 +1140,11 @@ private fun AccentChip(
         label = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .clip(CircleShape)
                         .background(color)
                 )
@@ -1115,35 +1155,26 @@ private fun AccentChip(
 }
 
 @Composable
-private fun LanguageChip(
-    selected: Boolean,
-    label: String,
-    onClick: () -> Unit
-) {
+private fun LanguageChip(selected: Boolean, label: String, onClick: () -> Unit) {
     FilterChip(selected = selected, onClick = onClick, label = { Text(label) })
-}
-
-@Composable
-private fun AccentDot(accentColor: Color) {
-    Box(
-        modifier = Modifier
-            .size(12.dp)
-            .clip(CircleShape)
-            .background(accentColor)
-    )
 }
 
 @Composable
 private fun ChipRow(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         content = content
     )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Internal enums
+// ─────────────────────────────────────────────────────────────────────────────
+
 private enum class DashboardPanel {
     Calendar,
+    Weather,
     Pomodoro,
     Media
 }

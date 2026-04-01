@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,7 +20,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.R
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun NothingDotClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -81,7 +82,7 @@ fun NothingDotClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, 
                         .background(Color.White.copy(alpha = 0.1f))
                 )
                 Text(
-                    text = "NOTHING DIGITAL",
+                    text = localizedStringResource(R.string.gallery_nothing_dot_label, language),
                     color = Color.White.copy(alpha = 0.2f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,

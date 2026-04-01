@@ -41,6 +41,7 @@
     <string name="accent_title">Accent</string>
     <string name="clock_style_title">Clock style</string>
     <string name="show_calendar_label">Calendar</string>
+    <string name="show_weather_label">Weather</string>
     <string name="show_battery_label">Battery</string>
     <string name="show_pomodoro_label">Pomodoro</string>
     <string name="show_seconds_label">Seconds</string>
@@ -145,4 +146,18 @@
     <string name="gallery_style_abstract">Abstract Geometric</string>
     <string name="gallery_style_typography">Typography Focus</string>
     <string name="gallery_style_nothing_dot">Nothing Dot</string>
+    <string name="weather_title">Weather</string>
+    <string name="weather_permission_body">Allow location so the app can show your current city and live weather.</string>
+    <string name="weather_enable_location">Enable location</string>
+    <string name="weather_loading">Loading current weather…</string>
+    <string name="weather_refresh">Refresh weather</string>
+    <string name="weather_location_unknown">Current location</string>
+    <string name="weather_unavailable">Weather unavailable</string>
+    <string name="weather_coordinates">Lat %1$s, Lon %2$s</string>
+    <string name="weather_wind_value">Wind: %1$s</string>
+    <string name="gallery_tokyo_neon_label">NEO SHINJUKU PULSE</string>
+    <string name="gallery_glitch_override">NETWORK_ACTIVE</string>
+    <string name="gallery_abstract_edition">Composition No. 7</string>
+    <string name="gallery_abstract_caption">Modernism / 2024 / Digital Print</string>
+    <string name="gallery_nothing_dot_label">PURE DIGITAL SOUL</string>
 </resources>

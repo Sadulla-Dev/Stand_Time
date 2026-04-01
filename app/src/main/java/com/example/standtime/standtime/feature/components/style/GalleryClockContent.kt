@@ -1,13 +1,10 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 
 @Composable
 fun GalleryClockContent(
@@ -17,7 +14,7 @@ fun GalleryClockContent(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.padding(20.dp)) {
+    ResponsiveGalleryFrame(modifier = modifier) {
         when (index) {
             0 -> NothingOfficialClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
             1 -> Ps5ClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
@@ -58,12 +55,12 @@ fun GalleryClockContent(
             36 -> SwissClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
             37 -> IndustrialClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
             38 -> TokyoNeonClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            39 -> PaperMinimalismClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            40 -> CyberGlitchClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            41 -> AbstractGeometricClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            42 -> TypographyFocusClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            43 -> NothingDotClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
-//            else -> FrostedStudioClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            39 -> PaperMinimalismClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            40 -> CyberGlitchClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            41 -> AbstractGeometricClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            42 -> TypographyFocusClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            43 -> NothingDotClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
+            else -> FrostedStudioClockStyle(parts, language, accentColor, Modifier.fillMaxSize())
         }
     }
 }

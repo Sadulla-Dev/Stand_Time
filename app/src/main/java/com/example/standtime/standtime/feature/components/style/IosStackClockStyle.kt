@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.standtime.R
-import com.example.standtime.standtime.StandTimeLanguage
-import com.example.standtime.standtime.localizedStringResource
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun IosStackClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -30,7 +29,11 @@ fun IosStackClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, ac
             }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-            GalleryWidgetCard(Color(0x332565FF), localizedStringResource(R.string.gallery_ios_weather_value, language), localizedStringResource(R.string.gallery_ios_weather_label, language))
+            GalleryWidgetCard(
+                Color(0x332565FF),
+                parts.weatherTemperature.ifBlank { localizedStringResource(R.string.gallery_ios_weather_value, language) },
+                parts.weatherSummary.ifBlank { localizedStringResource(R.string.gallery_ios_weather_label, language) }
+            )
             GalleryWidgetCard(Color(0x33EF4444), localizedStringResource(R.string.gallery_ios_calendar_value, language), localizedStringResource(R.string.gallery_ios_calendar_label, language))
             GalleryWidgetCard(Color(0x3322C55E), localizedStringResource(R.string.gallery_ios_finance_value, language), localizedStringResource(R.string.gallery_ios_finance_label, language))
         }

@@ -18,7 +18,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.R
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun CyberGlitchClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -73,7 +75,7 @@ fun CyberGlitchClockStyle(parts: GalleryClockParts, language: StandTimeLanguage,
             }
 
             Text(
-                text = "SYSTEM_OVERRIDE",
+                text = localizedStringResource(R.string.gallery_glitch_override, language),
                 color = Color.White.copy(alpha = 0.3f),
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,

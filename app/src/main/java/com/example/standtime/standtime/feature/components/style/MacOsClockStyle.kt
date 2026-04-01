@@ -3,7 +3,6 @@ package com.example.standtime.standtime.feature.components.style
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,8 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.standtime.R
-import com.example.standtime.standtime.StandTimeLanguage
-import com.example.standtime.standtime.localizedStringResource
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun MacOsClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -30,7 +29,12 @@ fun MacOsClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accen
                     GallerySquareIcon("\u2601")
                     GallerySquareIcon("\uD83D\uDCC5")
                 }
-                Text(localizedStringResource(R.string.gallery_location_tashkent, language), modifier = Modifier.padding(top = 12.dp), color = Color.White.copy(alpha = 0.7f), fontSize = 24.sp)
+                Text(
+                    parts.locationName.ifBlank { localizedStringResource(R.string.gallery_location_tashkent, language) },
+                    modifier = Modifier.padding(top = 12.dp),
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 24.sp
+                )
             }
         }
     }

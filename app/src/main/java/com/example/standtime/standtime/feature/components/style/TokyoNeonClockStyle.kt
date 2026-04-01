@@ -20,7 +20,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.R
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun TokyoNeonClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -87,7 +89,7 @@ fun TokyoNeonClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, a
                 )
 
                 Text(
-                    text = "NEO SHINJUKU PULSE",
+                    text = localizedStringResource(R.string.gallery_tokyo_neon_label, language),
                     color = Color.White.copy(alpha = 0.4f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,

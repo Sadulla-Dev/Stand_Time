@@ -9,7 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.standtime.standtime.StandTimeRoute
 import com.example.standtime.standtime.StandTimeViewModel
-import com.example.standtime.standtime.ThemeMode
+import com.example.standtime.standtime.feature.utils.ThemeMode
 import com.example.standtime.ui.theme.StandTimeTheme
 
 class MainActivity : ComponentActivity() {

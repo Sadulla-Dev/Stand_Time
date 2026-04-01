@@ -1,12 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 
 @Composable
 fun RetroFlipClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {

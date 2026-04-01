@@ -1,6 +1,8 @@
-package com.example.standtime.standtime
+package com.example.standtime.standtime.feature.components
 
 import androidx.compose.ui.graphics.Color
+import com.example.standtime.standtime.feature.utils.AccentPalette
+import com.example.standtime.standtime.feature.utils.StandTimeUiState
 import com.example.standtime.ui.theme.CoralAccent
 import com.example.standtime.ui.theme.LimeAccent
 import com.example.standtime.ui.theme.SkyAccent

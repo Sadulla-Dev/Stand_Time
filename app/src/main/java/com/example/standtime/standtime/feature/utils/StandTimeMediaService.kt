@@ -1,4 +1,4 @@
-package com.example.standtime.standtime
+package com.example.standtime.standtime.feature.utils
 
 import android.content.ComponentName
 import android.content.Context

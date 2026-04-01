@@ -1,4 +1,4 @@
-package com.example.standtime.standtime
+package com.example.standtime.standtime.feature.utils
 
 enum class ThemeMode {
     LIGHT,
@@ -44,11 +44,21 @@ data class StandTimeUiState(
     val calendarCells: List<CalendarDayCell> = emptyList(),
     val batteryLevel: Int = 0,
     val isCharging: Boolean = false,
+    val locationPermissionGranted: Boolean = false,
+    val isWeatherLoading: Boolean = false,
+    val weatherSummary: String = "",
+    val weatherTemperature: String = "",
+    val weatherWind: String = "",
+    val locationName: String = "",
+    val latitudeText: String = "",
+    val longitudeText: String = "",
+    val weatherError: String = "",
     val themeMode: ThemeMode = ThemeMode.DARK,
     val language: StandTimeLanguage = StandTimeLanguage.ENGLISH,
     val accentPalette: AccentPalette = AccentPalette.LIME,
     val clockStyle: ClockStyle = ClockStyle.NOTHING,
     val showCalendar: Boolean = true,
+    val showWeather: Boolean = true,
     val showBattery: Boolean = true,
     val showPomodoro: Boolean = true,
     val showSeconds: Boolean = true,
@@ -65,6 +75,7 @@ data class StandTimeUiState(
     val mediaAppName: String = "",
     val mediaTitle: String = "",
     val mediaSubtitle: String = "",
+    val selectedGalleryStyleIndex: Int = 0,
     val isMediaPlaying: Boolean = false
 )
 
@@ -72,11 +83,15 @@ sealed interface StandTimeIntent {
     data object ToggleTheme : StandTimeIntent
     data class ChangeLanguage(val language: StandTimeLanguage) : StandTimeIntent
     data class ChangeAccent(val palette: AccentPalette) : StandTimeIntent
+    data class ChangeGalleryStyleIndex(val index: Int) : StandTimeIntent
     data class ChangeClockStyle(val clockStyle: ClockStyle) : StandTimeIntent
     data object ToggleCalendar : StandTimeIntent
+    data object ToggleWeather : StandTimeIntent
     data object ToggleBattery : StandTimeIntent
     data object TogglePomodoro : StandTimeIntent
     data object ToggleSeconds : StandTimeIntent
+    data class LocationPermissionChanged(val granted: Boolean) : StandTimeIntent
+    data object RefreshWeather : StandTimeIntent
     data class SelectPomodoroPreset(val minutes: Int) : StandTimeIntent
     data object TogglePomodoroTimer : StandTimeIntent
     data object ResetPomodoro : StandTimeIntent

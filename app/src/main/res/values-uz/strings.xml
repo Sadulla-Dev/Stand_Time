@@ -41,6 +41,7 @@
     <string name="accent_title">Urg\'u rangi</string>
     <string name="clock_style_title">Soat stili</string>
     <string name="show_calendar_label">Kalendar</string>
+    <string name="show_weather_label">Ob-havo</string>
     <string name="show_battery_label">Zaryad</string>
     <string name="show_pomodoro_label">Pomodoro</string>
     <string name="show_seconds_label">Sekund</string>
@@ -145,4 +146,18 @@
     <string name="gallery_style_abstract">Abstract Geometric</string>
     <string name="gallery_style_typography">Typography Focus</string>
     <string name="gallery_style_nothing_dot">Nothing Dot</string>
+    <string name="weather_title">Ob-havo</string>
+    <string name="weather_permission_body">Hozirgi joylashuv va ob-havoni ko\'rsatish uchun location ruxsatini yoqing.</string>
+    <string name="weather_enable_location">Location yoqish</string>
+    <string name="weather_loading">Joriy ob-havo yuklanmoqda…</string>
+    <string name="weather_refresh">Ob-havoni yangilash</string>
+    <string name="weather_location_unknown">Joriy joylashuv</string>
+    <string name="weather_unavailable">Ob-havo mavjud emas</string>
+    <string name="weather_coordinates">Lat %1$s, Lon %2$s</string>
+    <string name="weather_wind_value">Shamol: %1$s</string>
+    <string name="gallery_tokyo_neon_label">NEO SHINJUKU PULSE</string>
+    <string name="gallery_glitch_override">NETWORK_ACTIVE</string>
+    <string name="gallery_abstract_edition">Kompozitsiya No. 7</string>
+    <string name="gallery_abstract_caption">Modernizm / 2024 / Raqamli print</string>
+    <string name="gallery_nothing_dot_label">SOF RAQAMLI RUH</string>
 </resources>

@@ -19,7 +19,9 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.standtime.standtime.StandTimeLanguage
+import com.example.standtime.R
+import com.example.standtime.standtime.feature.utils.StandTimeLanguage
+import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
@@ -75,17 +77,17 @@ fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLan
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                text = "GALLERY EDITION",
+                text = localizedStringResource(R.string.gallery_abstract_edition, language),
                 color = Color.Black.copy(alpha = 0.4f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 4.sp
             )
             Text(
-                text = "2026",
+                text = localizedStringResource(R.string.gallery_abstract_caption, language),
                 color = Color.Black,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Black
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
