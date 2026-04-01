@@ -25,6 +25,7 @@ import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+    val scale = LocalGalleryScaleFactor.current
     Box(
         modifier = modifier
             .fillMaxSize(),
@@ -33,18 +34,25 @@ fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLan
         // Large dark circle
         Box(
             modifier = Modifier
-                .size(480.dp)
-                .offset(x = (-220).dp, y = (-160).dp)
+                .size((480f * scale).coerceIn(240f, 560f).dp)
+                .offset(
+                    x = (-220f * scale).coerceIn((-260f), (-100f)).dp,
+                    y = (-160f * scale).coerceIn((-200f), (-70f)).dp
+                )
                 .background(Color(0xFF18181B).copy(alpha = 0.9f), CircleShape)
         )
 
         // Orange square border
         Box(
             modifier = Modifier
-                .size(400.dp)
-                .offset(x = 240.dp)
+                .size((400f * scale).coerceIn(220f, 500f).dp)
+                .offset(x = (240f * scale).coerceIn(110f, 280f).dp)
                 .rotate(45f)
-                .border(24.dp, Color(0xFFF97316).copy(alpha = 0.2f), RectangleShape)
+                .border(
+                    (24f * scale).coerceIn(10f, 30f).dp,
+                    Color(0xFFF97316).copy(alpha = 0.2f),
+                    RectangleShape
+                )
         )
 
         Column(
@@ -54,18 +62,21 @@ fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLan
             Text(
                 text = parts.hours,
                 color = Color.Black,
-                fontSize = 240.sp,
+                fontSize = (240f * scale).coerceIn(110f, 260f).sp,
                 fontWeight = FontWeight.Black,
-                lineHeight = 200.sp,
-                modifier = Modifier.offset(x = (-40).dp)
+                lineHeight = (200f * scale).coerceIn(92f, 220f).sp,
+                modifier = Modifier.offset(x = (-40f * scale).coerceIn((-52f), (-18f)).dp)
             )
             Text(
                 text = parts.minutes,
                 color = Color.Black.copy(alpha = 0.6f),
-                fontSize = 180.sp,
+                fontSize = (180f * scale).coerceIn(84f, 200f).sp,
                 fontWeight = FontWeight.Light,
-                lineHeight = 160.sp,
-                modifier = Modifier.offset(x = 40.dp, y = (-40).dp)
+                lineHeight = (160f * scale).coerceIn(74f, 182f).sp,
+                modifier = Modifier.offset(
+                    x = (40f * scale).coerceIn(18f, 52f).dp,
+                    y = (-40f * scale).coerceIn((-52f), (-18f)).dp
+                )
             )
         }
 
@@ -73,20 +84,20 @@ fun AbstractGeometricClockStyle(parts: GalleryClockParts, language: StandTimeLan
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(48.dp),
+                .padding((48f * scale).coerceIn(18f, 56f).dp),
             horizontalAlignment = Alignment.End
         ) {
             Text(
                 text = localizedStringResource(R.string.gallery_abstract_edition, language),
                 color = Color.Black.copy(alpha = 0.4f),
-                fontSize = 12.sp,
+                fontSize = (12f * scale).coerceIn(9f, 14f).sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 4.sp
+                letterSpacing = (4f * scale).coerceIn(2f, 5f).sp
             )
             Text(
                 text = localizedStringResource(R.string.gallery_abstract_caption, language),
                 color = Color.Black,
-                fontSize = 18.sp,
+                fontSize = (18f * scale).coerceIn(12f, 22f).sp,
                 fontWeight = FontWeight.SemiBold
             )
         }

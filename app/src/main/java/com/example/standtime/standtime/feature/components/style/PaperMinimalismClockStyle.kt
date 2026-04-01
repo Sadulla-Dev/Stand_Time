@@ -25,39 +25,40 @@ import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 
 @Composable
 fun PaperMinimalismClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+    val scale = LocalGalleryScaleFactor.current
     Box(
         modifier = modifier
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(48.dp),
+            horizontalArrangement = Arrangement.spacedBy((48f * scale).coerceIn(18f, 56f).dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Hours box with outer shadow
             NeumorphicBox(
-                size = 320.dp,
+                size = (320f * scale).coerceIn(170f, 360f).dp,
                 innerShadow = false,
                 backgroundColor = Color(0xFFE5E7EB)
             ) {
                 Text(
                     text = parts.hours,
                     color = Color(0xFF71717A).copy(alpha = 0.8f),
-                    fontSize = 180.sp,
+                    fontSize = (180f * scale).coerceIn(84f, 196f).sp,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             // Minutes box with inner shadow
             NeumorphicBox(
-                size = 320.dp,
+                size = (320f * scale).coerceIn(170f, 360f).dp,
                 innerShadow = true,
                 backgroundColor = Color(0xFFE5E7EB)
             ) {
                 Text(
                     text = parts.minutes,
                     color = Color(0xFF52525B),
-                    fontSize = 180.sp,
+                    fontSize = (180f * scale).coerceIn(84f, 196f).sp,
                     fontWeight = FontWeight.Light
                 )
             }

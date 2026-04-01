@@ -20,13 +20,49 @@ import com.example.standtime.standtime.feature.utils.localizedStringResource
 
 @Composable
 fun OledStealthClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+    val scale = LocalGalleryScaleFactor.current
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Box {
-            Text("${parts.hours}${parts.minutes}", color = Color.White.copy(alpha = 0.9f), fontSize = 168.sp, fontWeight = FontWeight.Thin)
-            Row(modifier = Modifier.align(Alignment.BottomCenter).padding(top = 240.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.weight(1f).height(2.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.2f), Color.Transparent))))
-                Text(localizedStringResource(R.string.gallery_stealth_mode, language), modifier = Modifier.padding(horizontal = 20.dp), color = Color.White.copy(alpha = 0.3f), fontSize = 10.sp, letterSpacing = 6.sp, fontWeight = FontWeight.Bold)
-                Box(modifier = Modifier.weight(1f).height(2.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.2f), Color.Transparent))))
+            Text(
+                "${parts.hours}${parts.minutes}",
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = (168f * scale).coerceIn(82f, 176f).sp,
+                fontWeight = FontWeight.Thin
+            )
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(top = (240f * scale).coerceIn(120f, 250f).dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height((2f * scale).coerceIn(1f, 3f).dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, Color.White.copy(alpha = 0.2f), Color.Transparent)
+                            )
+                        )
+                )
+                Text(
+                    localizedStringResource(R.string.gallery_stealth_mode, language),
+                    modifier = Modifier.padding(horizontal = (20f * scale).coerceIn(8f, 24f).dp),
+                    color = Color.White.copy(alpha = 0.3f),
+                    fontSize = (10f * scale).coerceIn(8f, 12f).sp,
+                    letterSpacing = (6f * scale).coerceIn(2f, 7f).sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height((2f * scale).coerceIn(1f, 3f).dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, Color.White.copy(alpha = 0.2f), Color.Transparent)
+                            )
+                        )
+                )
             }
         }
     }

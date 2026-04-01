@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -484,11 +485,14 @@ private fun PortraitDashboard(
     onRequestLocationPermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val adaptiveClockHeight = (screenHeight * 0.34f).coerceIn(220.dp, 380.dp)
+
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Gallery clock card (portrait: fixed height)
+        // Gallery clock card with adaptive height for different phone sizes.
         GalleryClockPanel(
             state = state,
             language = language,
@@ -496,7 +500,7 @@ private fun PortraitDashboard(
             onIntent = onIntent,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(adaptiveClockHeight)
         )
 
         CalendarCard(state, language, accentColor)
@@ -786,7 +790,10 @@ private fun CalendarCard(
     accentColor: Color
 ) {
     PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             Text(
                 text = localizedStringResource(R.string.calendar_title, language),
                 style = MaterialTheme.typography.headlineMedium,
@@ -812,22 +819,32 @@ private fun CalendarGrid(
     cells: List<CalendarDayCell>,
     accentColor: Color
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        CalendarRow {
-            weekDayLabels.forEach { label ->
-                CalendarTextCell(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        cells.chunked(7).forEach { week ->
-            CalendarRow {
-                week.forEach { cell ->
+    BoxWithConstraints {
+        val compact = maxWidth < 340.dp
+        val rowSpacing = if (compact) 4.dp else 8.dp
+        val itemSpacing = if (compact) 3.dp else 6.dp
+        Column(verticalArrangement = Arrangement.spacedBy(rowSpacing)) {
+            CalendarRow(itemSpacing = itemSpacing) {
+                weekDayLabels.forEach { label ->
                     CalendarTextCell(
-                        text = cell.label,
-                        color = if (cell.isCurrentMonth) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                        backgroundColor = if (cell.isToday) accentColor.copy(alpha = 0.20f)
-                        else Color.Transparent
+                        text = label,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        compact = compact
                     )
+                }
+            }
+            cells.chunked(7).forEach { week ->
+                CalendarRow(itemSpacing = itemSpacing) {
+                    week.forEach { cell ->
+                        CalendarTextCell(
+                            text = cell.label,
+                            color = if (cell.isCurrentMonth) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                            backgroundColor = if (cell.isToday) accentColor.copy(alpha = 0.20f)
+                            else Color.Transparent,
+                            compact = compact
+                        )
+                    }
                 }
             }
         }
@@ -835,10 +852,13 @@ private fun CalendarGrid(
 }
 
 @Composable
-private fun CalendarRow(content: @Composable RowScope.() -> Unit) {
+private fun CalendarRow(
+    itemSpacing: androidx.compose.ui.unit.Dp = 6.dp,
+    content: @Composable RowScope.() -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(itemSpacing),
         content = content
     )
 }
@@ -847,20 +867,21 @@ private fun CalendarRow(content: @Composable RowScope.() -> Unit) {
 private fun RowScope.CalendarTextCell(
     text: String,
     color: Color,
-    backgroundColor: Color = Color.Transparent
+    backgroundColor: Color = Color.Transparent,
+    compact: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .weight(1f)
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
-            .padding(vertical = 8.dp),
+            .padding(vertical = if (compact) 5.dp else 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = color,
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
     }

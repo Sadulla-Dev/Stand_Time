@@ -15,19 +15,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import com.example.standtime.standtime.feature.utils.StandTimeUiState
 import kotlin.math.min
+
+val LocalGalleryScaleFactor = staticCompositionLocalOf { 1f }
 
 data class GalleryClockParts(
     val hours: String,
@@ -85,14 +91,24 @@ fun GalleryMetricCard(
     background: Color,
     contentColor: Color
 ) {
+    val scale = LocalGalleryScaleFactor.current
     androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .clip(RoundedCornerShape(22.dp))
             .background(background)
             .padding(18.dp)
     ) {
-        Text(title.uppercase(), color = contentColor.copy(alpha = 0.5f), fontSize = 12.sp)
-        Text(value, color = contentColor, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Text(
+            title.uppercase(),
+            color = contentColor.copy(alpha = 0.5f),
+            fontSize = (12f * scale).coerceIn(10f, 16f).sp
+        )
+        Text(
+            value,
+            color = contentColor,
+            fontSize = (30f * scale).coerceIn(20f, 40f).sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -102,6 +118,7 @@ fun GalleryWidgetCard(
     primary: String,
     secondary: String
 ) {
+    val scale = LocalGalleryScaleFactor.current
     androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,21 +126,31 @@ fun GalleryWidgetCard(
             .background(background)
             .padding(18.dp)
     ) {
-        Text(secondary, color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-        Text(primary, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(
+            secondary,
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = (14f * scale).coerceIn(11f, 18f).sp
+        )
+        Text(
+            primary,
+            color = Color.White,
+            fontSize = (24f * scale).coerceIn(17f, 34f).sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
 @Composable
 fun GallerySquareIcon(value: String) {
+    val scale = LocalGalleryScaleFactor.current
     Box(
         modifier = Modifier
-            .size(64.dp)
+            .size((64f * scale).coerceIn(46f, 90f).dp)
             .clip(RoundedCornerShape(22.dp))
             .background(Color.White.copy(alpha = 0.14f)),
         contentAlignment = Alignment.Center
     ) {
-        Text(value, fontSize = 28.sp)
+        Text(value, fontSize = (28f * scale).coerceIn(18f, 38f).sp)
     }
 }
 
@@ -148,37 +175,49 @@ fun ClockHand(length: Dp, width: Dp, angle: Float, color: Color) {
 
 @Composable
 fun RowScope.GlassTimeBlock(value: String) {
+    val scale = LocalGalleryScaleFactor.current
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(220.dp)
+            .height((220f * scale).coerceIn(148f, 260f).dp)
             .clip(RoundedCornerShape(44.dp))
             .background(Color.White.copy(alpha = 0.12f))
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = value, color = Color.White, fontSize = 92.sp, fontWeight = FontWeight.Black)
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = (92f * scale).coerceIn(58f, 110f).sp,
+            fontWeight = FontWeight.Black
+        )
     }
 }
 
 @Composable
 fun BauhausColumn(top: Char, bottom: Char, topColor: Color, bottomColor: Color, topRound: Boolean) {
+    val scale = LocalGalleryScaleFactor.current
     androidx.compose.foundation.layout.Column(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.padding(horizontal = 8.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(150.dp)
+                .size((150f * scale).coerceIn(96f, 186f).dp)
                 .clip(if (topRound) CircleShape else RoundedCornerShape(0.dp))
                 .background(topColor),
             contentAlignment = Alignment.Center
         ) {
-            Text(top.toString(), color = Color.White, fontSize = 72.sp, fontWeight = FontWeight.Black)
+            Text(
+                top.toString(),
+                color = Color.White,
+                fontSize = (72f * scale).coerceIn(44f, 84f).sp,
+                fontWeight = FontWeight.Black
+            )
         }
         Box(
             modifier = Modifier
-                .size(150.dp)
+                .size((150f * scale).coerceIn(96f, 186f).dp)
                 .clip(RoundedCornerShape(bottomStart = if (topRound) 0.dp else 80.dp))
                 .background(bottomColor),
             contentAlignment = Alignment.Center
@@ -186,7 +225,7 @@ fun BauhausColumn(top: Char, bottom: Char, topColor: Color, bottomColor: Color, 
             Text(
                 bottom.toString(),
                 color = if (bottomColor == Color(0xFFF9C32E)) Color.Black else Color.White,
-                fontSize = 72.sp,
+                fontSize = (72f * scale).coerceIn(44f, 84f).sp,
                 fontWeight = FontWeight.Black
             )
         }
@@ -195,18 +234,22 @@ fun BauhausColumn(top: Char, bottom: Char, topColor: Color, bottomColor: Color, 
 
 @Composable
 fun FlipBlock(value: String) {
+    val scale = LocalGalleryScaleFactor.current
     Box(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(Color(0xFF27272A))
-            .padding(horizontal = 34.dp, vertical = 26.dp),
+            .padding(
+                horizontal = (34f * scale).coerceIn(20f, 42f).dp,
+                vertical = (26f * scale).coerceIn(14f, 34f).dp
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = value,
             color = Color.White,
-            fontSize = 104.sp,
+            fontSize = (104f * scale).coerceIn(60f, 122f).sp,
             fontWeight = FontWeight.Black
         )
     }
@@ -218,25 +261,37 @@ fun ResponsiveGalleryFrame(
     content: @Composable BoxScope.() -> Unit
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        // Use a phone-landscape reference canvas so gallery styles stay large.
-        // The previous canvas was too wide, which made everything look squeezed.
-        val baseWidth = 920f
-        val baseHeight = 360f
-        val scale = min(maxWidth.value / baseWidth, maxHeight.value / baseHeight)
+        val ratio = maxWidth.value / maxHeight.value
+        val smallestSide = min(maxWidth.value, maxHeight.value)
+        // Pick a design canvas by current aspect ratio so styles stay readable
+        // both in full-screen pager and half-screen dashboard panel.
+        val (baseWidth, baseHeight) = when {
+            ratio < 0.9f -> 390f to 780f      // portrait / narrow panes
+            smallestSide < 330f -> 700f to 560f // compact dashboard pane
+            ratio < 1.5f -> 760f to 520f      // medium tablets / compact landscape
+            else -> 920f to 360f              // wide landscape
+        }
+        val safeWidth = maxWidth.value * 0.94f
+        val safeHeight = maxHeight.value * 0.94f
+        val scale = min(safeWidth / baseWidth, safeHeight / baseHeight).coerceIn(0.58f, 1.25f)
+        val density = LocalDensity.current
+        val scaledDensity = Density(
+            density = density.density * scale,
+            fontScale = density.fontScale * scale
+        )
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .width(baseWidth.dp)
-                    .height(baseHeight.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
-                content = content
-            )
+            CompositionLocalProvider(LocalDensity provides scaledDensity) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Keep style-level scale at 1f to avoid double-scaling in
+                    // helpers that already multiply by LocalGalleryScaleFactor.
+                    CompositionLocalProvider(LocalGalleryScaleFactor provides 1f) {
+                        content()
+                    }
+                }
+            }
         }
     }
 }
