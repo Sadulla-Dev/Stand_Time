@@ -92,6 +92,7 @@ fun StandTimeRoute(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val accentColor = state.accentColor()
     var isCustomStudioOpen by rememberSaveable { mutableStateOf(false) }
+    var showCustomCreateChoice by rememberSaveable { mutableStateOf(false) }
 
     var hasRequestedLocationPermission by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -132,6 +133,46 @@ fun StandTimeRoute(
     val scope = rememberCoroutineScope()
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        if (showCustomCreateChoice) {
+            val targetCustomStyle = state.savedCustomClockStyles
+                .getOrNull(state.selectedGalleryStyleIndex - galleryStyles.size)
+                ?: state.savedCustomClockStyles.lastOrNull()
+            AlertDialog(
+                onDismissRequest = { showCustomCreateChoice = false },
+                title = { Text(localizedStringResource(R.string.custom_create_dialog_title, language)) },
+                text = { Text(localizedStringResource(R.string.custom_create_dialog_message, language)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            targetCustomStyle?.let {
+                                onIntent(StandTimeIntent.EditSavedCustomClockStyle(it.id))
+                            }
+                            showCustomCreateChoice = false
+                            isCustomStudioOpen = true
+                        }
+                    ) {
+                        Text(localizedStringResource(R.string.custom_edit_existing, language))
+                    }
+                },
+                dismissButton = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(
+                            onClick = {
+                                onIntent(StandTimeIntent.StartNewCustomClockStyle)
+                                showCustomCreateChoice = false
+                                isCustomStudioOpen = true
+                            }
+                        ) {
+                            Text(localizedStringResource(R.string.custom_create_new, language))
+                        }
+                        TextButton(onClick = { showCustomCreateChoice = false }) {
+                            Text(localizedStringResource(R.string.custom_cancel, language))
+                        }
+                    }
+                }
+            )
+        }
+
         if (isCustomStudioOpen) {
             CustomClockStudioPage(
                 state = state,
@@ -160,7 +201,14 @@ fun StandTimeRoute(
                             language = language,
                             accentColor = accentColor,
                             onIntent = onIntent,
-                            onOpenCustomStudio = { isCustomStudioOpen = true }
+                            onOpenCustomStudio = {
+                                if (state.savedCustomClockStyles.isNotEmpty()) {
+                                    showCustomCreateChoice = true
+                                } else {
+                                    onIntent(StandTimeIntent.StartNewCustomClockStyle)
+                                    isCustomStudioOpen = true
+                                }
+                            }
                         )
                         1 -> DashboardPage(
                             state = state,

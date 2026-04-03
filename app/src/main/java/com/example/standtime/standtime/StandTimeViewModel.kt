@@ -295,18 +295,60 @@ class StandTimeViewModel(
                 saveCustomClockStyle()
             }
 
+            StandTimeIntent.StartNewCustomClockStyle -> {
+                _uiState.update { state ->
+                    state.copy(
+                        customClockStyle = CustomClockStyleSettings(
+                            recentColors = state.customClockStyle.recentColors
+                        ),
+                        editingCustomClockStyleId = null
+                    )
+                }
+                saveCustomClockStyle()
+            }
+
+            is StandTimeIntent.EditSavedCustomClockStyle -> {
+                _uiState.update { state ->
+                    val saved = state.savedCustomClockStyles.firstOrNull { it.id == intent.id }
+                    state.copy(
+                        customClockStyle = saved?.settings ?: state.customClockStyle,
+                        editingCustomClockStyleId = saved?.id
+                    )
+                }
+                saveCustomClockStyle()
+            }
+
             StandTimeIntent.SaveCustomClockStyle -> {
                 _uiState.update { state ->
-                    val nextNumber = state.savedCustomClockStyles.size + 1
-                    val savedStyle = SavedCustomClockStyle(
-                        id = "custom_${System.currentTimeMillis()}_$nextNumber",
-                        name = "Custom $nextNumber",
-                        settings = state.customClockStyle.copy()
-                    )
-                    state.copy(
-                        savedCustomClockStyles = state.savedCustomClockStyles + savedStyle,
-                        selectedGalleryStyleIndex = builtinGalleryStyleCount() + state.savedCustomClockStyles.size
-                    )
+                    val editingId = state.editingCustomClockStyleId
+                    if (editingId != null) {
+                        val updatedList = state.savedCustomClockStyles.map { saved ->
+                            if (saved.id == editingId) {
+                                saved.copy(settings = state.customClockStyle.copy())
+                            } else {
+                                saved
+                            }
+                        }
+                        val editedIndex = updatedList.indexOfFirst { it.id == editingId }
+                            .coerceAtLeast(0)
+                        state.copy(
+                            savedCustomClockStyles = updatedList,
+                            selectedGalleryStyleIndex = builtinGalleryStyleCount() + editedIndex,
+                            editingCustomClockStyleId = editingId
+                        )
+                    } else {
+                        val nextNumber = state.savedCustomClockStyles.size + 1
+                        val savedStyle = SavedCustomClockStyle(
+                            id = "custom_${System.currentTimeMillis()}_$nextNumber",
+                            name = "Custom $nextNumber",
+                            settings = state.customClockStyle.copy()
+                        )
+                        state.copy(
+                            savedCustomClockStyles = state.savedCustomClockStyles + savedStyle,
+                            selectedGalleryStyleIndex = builtinGalleryStyleCount() + state.savedCustomClockStyles.size,
+                            editingCustomClockStyleId = savedStyle.id
+                        )
+                    }
                 }
                 prefs.edit()
                     .putInt(KEY_GALLERY_INDEX, _uiState.value.selectedGalleryStyleIndex)
@@ -322,7 +364,8 @@ class StandTimeViewModel(
                     )
                     state.copy(
                         savedCustomClockStyles = updated,
-                        selectedGalleryStyleIndex = clampedIndex
+                        selectedGalleryStyleIndex = clampedIndex,
+                        editingCustomClockStyleId = if (state.editingCustomClockStyleId == intent.id) null else state.editingCustomClockStyleId
                     )
                 }
                 prefs.edit()

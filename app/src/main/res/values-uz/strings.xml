@@ -178,6 +178,10 @@
     <string name="custom_delete_title">Stil o‘chirilsinmi?</string>
     <string name="custom_delete_message">%1$s custom style ro‘yxatdan o‘chirilsinmi?</string>
     <string name="custom_delete_confirm">O‘chirish</string>
+    <string name="custom_create_dialog_title">Custom Studio</string>
+    <string name="custom_create_dialog_message">Oldingi custom soatni tahrirlaysizmi yoki yangi yaratamizmi?</string>
+    <string name="custom_edit_existing">Oldingisini edit qilish</string>
+    <string name="custom_create_new">Yangi yaratish</string>
     <string name="custom_clock_sample_time">11:20</string>
     <string name="custom_font_mono">Inter</string>
     <string name="custom_font_mono_wide">Oswald Wide</string>

@@ -127,7 +127,8 @@ data class StandTimeUiState(
     val selectedGalleryStyleIndex: Int = 0,
     val isMediaPlaying: Boolean = false,
     val customClockStyle: CustomClockStyleSettings = CustomClockStyleSettings(),
-    val savedCustomClockStyles: List<SavedCustomClockStyle> = emptyList()
+    val savedCustomClockStyles: List<SavedCustomClockStyle> = emptyList(),
+    val editingCustomClockStyleId: String? = null
 )
 
 sealed interface StandTimeIntent {
@@ -161,6 +162,8 @@ sealed interface StandTimeIntent {
     data class ToggleCustomClockSeconds(val enabled: Boolean) : StandTimeIntent
     data class ToggleCustomClockDate(val enabled: Boolean) : StandTimeIntent
     data class ToggleCustomClockWeather(val enabled: Boolean) : StandTimeIntent
+    data object StartNewCustomClockStyle : StandTimeIntent
+    data class EditSavedCustomClockStyle(val id: String) : StandTimeIntent
     data object SaveCustomClockStyle : StandTimeIntent
     data class DeleteSavedCustomClockStyle(val id: String) : StandTimeIntent
 }

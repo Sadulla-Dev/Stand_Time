@@ -452,7 +452,6 @@ private fun StudioControlsCard(
                         }
                         OutlinedButton(
                             onClick = {
-                                onIntent(StandTimeIntent.ChangeCustomClockScale(1f))
                                 onIntent(StandTimeIntent.ChangeCustomClockOffset(0f, 0f))
                             }
                         ) {

@@ -178,6 +178,10 @@
     <string name="custom_delete_title">Удалить стиль?</string>
     <string name="custom_delete_message">Удалить %1$s из ваших custom clock styles?</string>
     <string name="custom_delete_confirm">Удалить</string>
+    <string name="custom_create_dialog_title">Custom Studio</string>
+    <string name="custom_create_dialog_message">Редактировать предыдущие custom часы или создать новые?</string>
+    <string name="custom_edit_existing">Редактировать прошлые</string>
+    <string name="custom_create_new">Создать новые</string>
     <string name="custom_clock_sample_time">11:20</string>
     <string name="custom_font_mono">Inter</string>
     <string name="custom_font_mono_wide">Oswald Wide</string>
