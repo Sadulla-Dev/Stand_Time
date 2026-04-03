@@ -7,8 +7,12 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -48,10 +53,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -139,8 +147,22 @@ fun StandTimeRoute(
                 ?: state.savedCustomClockStyles.lastOrNull()
             AlertDialog(
                 onDismissRequest = { showCustomCreateChoice = false },
-                title = { Text(localizedStringResource(R.string.custom_create_dialog_title, language)) },
-                text = { Text(localizedStringResource(R.string.custom_create_dialog_message, language)) },
+                title = {
+                    Text(
+                        localizedStringResource(
+                            R.string.custom_create_dialog_title,
+                            language
+                        )
+                    )
+                },
+                text = {
+                    Text(
+                        localizedStringResource(
+                            R.string.custom_create_dialog_message,
+                            language
+                        )
+                    )
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -210,6 +232,7 @@ fun StandTimeRoute(
                                 }
                             }
                         )
+
                         1 -> DashboardPage(
                             state = state,
                             language = language,
@@ -218,6 +241,7 @@ fun StandTimeRoute(
                             onRequestLocationPermission = requestLocationPermission,
                             isLandscape = isLandscape
                         )
+
                         else -> SetupPage(
                             state = state,
                             language = language,
@@ -259,13 +283,21 @@ private fun ClockStylesPage(
     val lastStyleIndex = (stylesCount - 1).coerceAtLeast(0)
     val parts = state.galleryParts()
     var pendingDeleteStyleId by rememberSaveable { mutableStateOf<String?>(null) }
+    var overlaysVisible by rememberSaveable { mutableStateOf(true) }
     val galleryPagerState = rememberPagerState(
         initialPage = state.selectedGalleryStyleIndex.coerceIn(0, lastStyleIndex),
         pageCount = { stylesCount }
     )
     val currentIndex = galleryPagerState.currentPage.coerceIn(0, lastStyleIndex)
     val currentStyle = galleryStyleAt(currentIndex, state.savedCustomClockStyles)
-    val styleName = currentStyle.label ?: localizedStringResource(currentStyle.nameRes ?: R.string.gallery_style_custom, language)
+    val styleName = currentStyle.label ?: localizedStringResource(
+        currentStyle.nameRes ?: R.string.gallery_style_custom, language
+    )
+    val overlayAlpha by animateFloatAsState(
+        targetValue = if (overlaysVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 850),
+        label = "galleryOverlayAlpha"
+    )
 
     LaunchedEffect(stylesCount, galleryPagerState.currentPage) {
         if (galleryPagerState.currentPage > lastStyleIndex) {
@@ -275,10 +307,14 @@ private fun ClockStylesPage(
 
     // Persist selected style to state
     LaunchedEffect(currentIndex) {
+        overlaysVisible = true
         onIntent(StandTimeIntent.ChangeGalleryStyleIndex(currentIndex))
+        kotlinx.coroutines.delay(2000)
+        overlaysVisible = false
     }
 
-    val customStyleToDelete = state.savedCustomClockStyles.firstOrNull { it.id == pendingDeleteStyleId }
+    val customStyleToDelete =
+        state.savedCustomClockStyles.firstOrNull { it.id == pendingDeleteStyleId }
     if (customStyleToDelete != null) {
         AlertDialog(
             onDismissRequest = { pendingDeleteStyleId = null },
@@ -347,7 +383,8 @@ private fun ClockStylesPage(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(horizontal = 24.dp, vertical = 20.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .graphicsLayer { alpha = overlayAlpha },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -358,14 +395,13 @@ private fun ClockStylesPage(
                     state.batteryLevel
                 ),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.Black.copy(alpha = 0.28f))
+                    .galleryOverlaySurface(RoundedCornerShape(999.dp))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
                 letterSpacing = 1.2.sp,
-                color = Color.White
+                color = GalleryOverlayContentColor
             )
             Text(
                 text = localizedStringResource(
@@ -376,49 +412,79 @@ private fun ClockStylesPage(
                     stylesCount
                 ),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.Black.copy(alpha = 0.28f))
+                    .galleryOverlaySurface(RoundedCornerShape(999.dp))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
                 letterSpacing = 1.2.sp,
-                color = Color.White
+                color = GalleryOverlayContentColor
             )
         }
 
-        Column(
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(bottom = 18.dp)
+                .horizontalScroll(rememberScrollState())
+                .graphicsLayer { alpha = overlayAlpha },
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = onOpenCustomStudio) {
-                Text(localizedStringResource(R.string.custom_create_button, language))
-            }
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(stylesCount) { index ->
-                    Box(
-                        modifier = Modifier
-                            .width(if (index == currentIndex) 22.dp else 6.dp)
-                            .height(5.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                Color.White.copy(
-                                    alpha = if (index == currentIndex) 0.95f else 0.25f
-                                )
+            repeat(stylesCount) { index ->
+                Box(
+                    modifier = Modifier
+                        .width(if (index == currentIndex) 22.dp else 6.dp)
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            GalleryOverlayContentColor.copy(
+                                alpha = if (index == currentIndex) 0.95f else 0.25f
                             )
-                    )
-                }
+                        )
+                )
             }
+        }
+
+        Button(
+            onClick = onOpenCustomStudio,
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GalleryOverlayChipColor,
+                contentColor = GalleryOverlayContentColor
+            ),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 26.dp)
+                .graphicsLayer { alpha = overlayAlpha }
+                .galleryOverlaySurface(CircleShape)
+        ) {
+            Text(
+                text = "+",
+                fontSize = 25.sp,
+                fontFamily = FontFamily.Monospace
+            )
         }
     }
 }
+
+private val GalleryOverlayChipColor = Color.Black.copy(alpha = 0.28f)
+private val GalleryOverlayContentColor = Color.White
+
+private fun Modifier.galleryOverlaySurface(shape: Shape): Modifier = this
+    .shadow(
+        elevation = 16.dp,
+        shape = shape,
+        ambientColor = Color.Black.copy(alpha = 0.26f),
+        spotColor = Color.Black.copy(alpha = 0.20f)
+    )
+    .border(
+        width = 1.dp,
+        color = Color.White.copy(alpha = 0.08f),
+        shape = shape
+    )
+    .clip(shape)
+    .background(GalleryOverlayChipColor)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page 1 — Dashboard
@@ -534,7 +600,9 @@ private fun GalleryClockPanel(
 
         // Subtle style name label at bottom
         Text(
-            text = currentStyle.label ?: localizedStringResource(currentStyle.nameRes ?: R.string.gallery_style_custom, language),
+            text = currentStyle.label ?: localizedStringResource(
+                currentStyle.nameRes ?: R.string.gallery_style_custom, language
+            ),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .clip(RoundedCornerShape(999.dp))
@@ -604,6 +672,7 @@ private fun InfoPanelStack(
                 DashboardPanel.Weather -> WeatherCard(
                     state, language, accentColor, onIntent, onRequestLocationPermission
                 )
+
                 DashboardPanel.Pomodoro -> PomodoroCard(state, language, accentColor, onIntent)
                 DashboardPanel.Media -> MediaCard(state, language, accentColor, onIntent)
             }
@@ -741,12 +810,26 @@ private fun SettingsCard(
                     FilterChip(
                         selected = state.themeMode == ThemeMode.DARK,
                         onClick = { if (state.themeMode != ThemeMode.DARK) onIntent(StandTimeIntent.ToggleTheme) },
-                        label = { Text(localizedStringResource(R.string.dark_theme_label, language)) }
+                        label = {
+                            Text(
+                                localizedStringResource(
+                                    R.string.dark_theme_label,
+                                    language
+                                )
+                            )
+                        }
                     )
                     FilterChip(
                         selected = state.themeMode == ThemeMode.LIGHT,
                         onClick = { if (state.themeMode != ThemeMode.LIGHT) onIntent(StandTimeIntent.ToggleTheme) },
-                        label = { Text(localizedStringResource(R.string.light_theme_label, language)) }
+                        label = {
+                            Text(
+                                localizedStringResource(
+                                    R.string.light_theme_label,
+                                    language
+                                )
+                            )
+                        }
                     )
                 }
             }
@@ -859,6 +942,7 @@ private fun WeatherCard(
                         Text(localizedStringResource(R.string.weather_enable_location, language))
                     }
                 }
+
                 state.isWeatherLoading -> {
                     Text(
                         text = localizedStringResource(R.string.weather_loading, language),
@@ -866,6 +950,7 @@ private fun WeatherCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
                 state.weatherError.isNotBlank() -> {
                     Text(
                         text = state.weatherError,
@@ -875,9 +960,17 @@ private fun WeatherCard(
                     FilterChip(
                         selected = false,
                         onClick = { onIntent(StandTimeIntent.RefreshWeather) },
-                        label = { Text(localizedStringResource(R.string.weather_refresh, language)) }
+                        label = {
+                            Text(
+                                localizedStringResource(
+                                    R.string.weather_refresh,
+                                    language
+                                )
+                            )
+                        }
                     )
                 }
+
                 else -> {
                     Text(
                         text = state.locationName.ifBlank {
@@ -912,7 +1005,14 @@ private fun WeatherCard(
                     FilterChip(
                         selected = false,
                         onClick = { onIntent(StandTimeIntent.RefreshWeather) },
-                        label = { Text(localizedStringResource(R.string.weather_refresh, language)) }
+                        label = {
+                            Text(
+                                localizedStringResource(
+                                    R.string.weather_refresh,
+                                    language
+                                )
+                            )
+                        }
                     )
                 }
             }
@@ -1138,7 +1238,11 @@ private fun MediaCard(
                 )
                 Text(
                     text = state.mediaSubtitle.ifBlank {
-                        localizedStringResource(R.string.media_source_value, language, state.mediaAppName)
+                        localizedStringResource(
+                            R.string.media_source_value,
+                            language,
+                            state.mediaAppName
+                        )
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
