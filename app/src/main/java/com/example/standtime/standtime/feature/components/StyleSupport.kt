@@ -58,7 +58,8 @@ data class GalleryClockParts(
     val kanjiMinutes: String,
     val weatherTemperature: String,
     val weatherSummary: String,
-    val locationName: String
+    val locationName: String,
+    val batteryInfo : String
 )
 
 fun StandTimeUiState.galleryParts(): GalleryClockParts {
@@ -76,7 +77,8 @@ fun StandTimeUiState.galleryParts(): GalleryClockParts {
         kanjiMinutes = minutePart.toKanji(),
         weatherTemperature = weatherTemperature,
         weatherSummary = weatherSummary,
-        locationName = locationName
+        locationName = locationName,
+        batteryInfo = "$batteryLevel"
     )
 }
 
@@ -242,29 +244,6 @@ fun BauhausColumn(top: Char, bottom: Char, topColor: Color, bottomColor: Color, 
                 fontWeight = FontWeight.Black
             )
         }
-    }
-}
-
-@Composable
-fun FlipBlock(value: String) {
-    val scale = LocalGalleryScaleFactor.current
-    Box(
-        modifier = Modifier
-            .padding(horizontal = 12.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color(0xFF27272A))
-            .padding(
-                horizontal = (34f * scale).coerceIn(20f, 42f).dp,
-                vertical = (26f * scale).coerceIn(14f, 34f).dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = value,
-            color = Color.White,
-            fontSize = (104f * scale).coerceIn(60f, 122f).sp,
-            fontWeight = FontWeight.Black
-        )
     }
 }
 

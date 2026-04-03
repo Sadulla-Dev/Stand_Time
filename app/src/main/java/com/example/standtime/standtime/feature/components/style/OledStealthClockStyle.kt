@@ -30,6 +30,7 @@ fun OledStealthClockStyle(parts: GalleryClockParts, language: StandTimeLanguage,
         Box {
             Text(
                 "${parts.hours}${parts.minutes}",
+                modifier = Modifier.padding(start = 20.dp),
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = (168f * scale).coerceIn(82f, 176f).sp,
                 fontWeight = FontWeight.Thin

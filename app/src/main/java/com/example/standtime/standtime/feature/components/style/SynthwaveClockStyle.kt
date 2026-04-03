@@ -21,7 +21,7 @@ fun SynthwaveClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, a
         modifier = modifier.background(Brush.linearGradient(listOf(Color(0xFF120422), Color(0xFF312E81)))),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFF67E8F9), fontSize = 128.sp, fontWeight = FontWeight.Black)
-        Text(text = "${parts.hours}:${parts.minutes}", modifier = Modifier.offset(y = 8.dp), color = Color(0xFFF472B6).copy(alpha = 0.55f), fontSize = 128.sp, fontWeight = FontWeight.Black)
+        Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFF67E8F9), fontSize = 168.sp, fontWeight = FontWeight.Black)
+        Text(text = "${parts.hours}:${parts.minutes}", modifier = Modifier.offset(y = 8.dp), color = Color(0xFFF472B6).copy(alpha = 0.55f), fontSize = 168.sp, fontWeight = FontWeight.Black)
     }
 }

@@ -51,7 +51,6 @@ import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 private val builtinClockStyles =
     listOf<@Composable (GalleryClockParts, StandTimeLanguage, Color, Modifier) -> Unit>(
         ::NothingOfficialClockStyle,
-        ::Ps5ClockStyle,
         ::TeslaClockStyle,
         ::NasaClockStyle,
         ::PixelStackClockStyle,
@@ -62,25 +61,22 @@ private val builtinClockStyles =
         ::PixelPetClockStyle,
         ::LofiClockStyle,
         ::RolexClockStyle,
+        ::AnalogZenClockStyle,
         ::GlassClockStyle,
         ::LuxuryClockStyle,
         ::BauhausClockStyle,
         ::MacOsClockStyle,
         ::WordsClockStyle,
         ::CoffeeClockStyle,
-        ::NightOwlClockStyle,
-        ::AnalogZenClockStyle,
         ::RetroFlipClockStyle,
         ::BinaryPulseClockStyle,
         ::SolarOrbitClockStyle,
         ::TypewriterClockStyle,
-        ::LiquidGradientClockStyle,
         ::AdminPanelClockStyle,
         ::SynthwaveClockStyle,
         ::ZenArchitectureClockStyle,
         ::ArchitectStudioClockStyle,
         ::OledStealthClockStyle,
-        ::NordicClockStyle,
         ::SwissClockStyle,
         ::IndustrialClockStyle,
         ::FrostedStudioClockStyle,
@@ -89,7 +85,8 @@ private val builtinClockStyles =
         ::CyberGlitchClockStyle,
         ::AbstractGeometricClockStyle,
         ::TypographyFocusClockStyle,
-        ::NothingDotClockStyle
+        ::NothingDotClockStyle,
+        ::Ps5ClockStyle,
     )
 
 @Composable

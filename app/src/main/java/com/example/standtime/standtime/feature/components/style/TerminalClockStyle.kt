@@ -20,7 +20,7 @@ import com.example.standtime.standtime.feature.utils.localizedStringResource
 @Composable
 fun TerminalClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.background(Brush.linearGradient(listOf(Color.Black, Color(0xFF031806)))),
+        modifier = modifier.background(Brush.linearGradient(listOf(Color.Black, Color(0xFF031806)))).padding(start = 40.dp),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
     ) {
         Text(text = localizedStringResource(R.string.gallery_terminal_init, language), color = Color(0xFF22C55E), fontFamily = FontFamily.Monospace, fontSize = 22.sp)

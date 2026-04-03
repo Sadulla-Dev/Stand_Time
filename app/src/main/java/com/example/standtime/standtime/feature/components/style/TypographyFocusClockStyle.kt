@@ -22,7 +22,12 @@ import com.example.standtime.standtime.feature.components.LocalGalleryScaleFacto
 import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 
 @Composable
-fun TypographyFocusClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
+fun TypographyFocusClockStyle(
+    parts: GalleryClockParts,
+    language: StandTimeLanguage,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
     val scale = LocalGalleryScaleFactor.current
     val hourInt = parts.hours.toIntOrNull() ?: 0
     val hourWord = when (language) {
@@ -30,6 +35,10 @@ fun TypographyFocusClockStyle(parts: GalleryClockParts, language: StandTimeLangu
         StandTimeLanguage.RUSSIAN -> getRussianHourWord(hourInt)
         else -> getEnglishHourWord(hourInt)
     }
+
+
+    val baseFontSize = (78f * scale).coerceIn(42f, 88f).sp
+    val baseLineHeight = (70f * scale).coerceIn(38f, 78f).sp
 
     Box(
         modifier = modifier
@@ -47,26 +56,29 @@ fun TypographyFocusClockStyle(parts: GalleryClockParts, language: StandTimeLangu
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = (64f * scale).coerceIn(28f, 74f).dp,
-                vertical = (42f * scale).coerceIn(24f, 56f).dp
+                horizontal = (48f * scale).coerceIn(24f, 60f).dp,
+                vertical = (32f * scale).coerceIn(20f, 48f).dp
             )
         ) {
+
             Text(
                 text = if (language == StandTimeLanguage.UZBEK) "HOZIR" else "IT IS",
                 color = Color(0xFF18181B),
-                fontSize = (120f * scale).coerceIn(56f, 128f).sp,
+                fontSize = baseFontSize,
                 fontWeight = FontWeight.Black,
                 fontStyle = FontStyle.Italic,
-                lineHeight = (100f * scale).coerceIn(48f, 106f).sp
+                lineHeight = baseLineHeight
             )
+
             Text(
                 text = hourWord.uppercase(),
                 color = Color(0xFF111827),
-                fontSize = (120f * scale).coerceIn(56f, 128f).sp,
+                fontSize = baseFontSize,
                 fontWeight = FontWeight.Black,
                 fontStyle = FontStyle.Italic,
-                lineHeight = (100f * scale).coerceIn(48f, 106f).sp
+                lineHeight = baseLineHeight
             )
+
             Text(
                 text = when (language) {
                     StandTimeLanguage.UZBEK -> "DAN ${parts.minutes} DAQIQA"
@@ -74,25 +86,27 @@ fun TypographyFocusClockStyle(parts: GalleryClockParts, language: StandTimeLangu
                     else -> "PAST ${parts.minutes}"
                 },
                 color = Color(0xFF6B4F3A),
-                fontSize = (120f * scale).coerceIn(56f, 128f).sp,
+                fontSize = baseFontSize,
                 fontWeight = FontWeight.Black,
                 fontStyle = FontStyle.Italic,
-                lineHeight = (100f * scale).coerceIn(48f, 106f).sp
+                lineHeight = baseLineHeight
             )
+
             Text(
                 text = if (language == StandTimeLanguage.UZBEK) "O'TDI." else "NOW.",
                 color = Color(0xFF18181B),
-                fontSize = (120f * scale).coerceIn(56f, 128f).sp,
+                fontSize = baseFontSize,
                 fontWeight = FontWeight.Black,
                 fontStyle = FontStyle.Italic,
-                lineHeight = (100f * scale).coerceIn(48f, 106f).sp
+                lineHeight = baseLineHeight
             )
+
 
             Box(
                 modifier = Modifier
-                    .padding(top = (48f * scale).coerceIn(20f, 52f).dp)
-                    .width((128f * scale).coerceIn(72f, 138f).dp)
-                    .height(4.dp)
+                    .padding(top = (32f * scale).coerceIn(16f, 40f).dp)
+                    .width((84f * scale).coerceIn(48f, 100f).dp)
+                    .height(3.dp)
                     .background(accentColor.copy(alpha = 0.9f))
             )
         }

@@ -33,7 +33,7 @@ fun LuxuryClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, acce
             text = "${parts.hours}:${parts.minutes}",
             modifier = Modifier.padding(top = 24.dp).clip(RoundedCornerShape(8.dp)).background(Color.Transparent).padding(horizontal = 24.dp),
             color = Color(0xFFD4AF37),
-            fontSize = 128.sp,
+            fontSize = 188.sp,
             fontWeight = FontWeight.Light
         )
     }

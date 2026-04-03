@@ -24,7 +24,7 @@ import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 @Composable
 fun IndustrialClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accentColor: Color, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.background(Brush.linearGradient(listOf(Color(0xFF1C1C1C), Color(0xFF090909)))),
+        modifier = modifier.background(Brush.linearGradient(listOf(Color(0xFF1C1C1C), Color(0xFF090909)))).padding(horizontal = 20.dp),
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

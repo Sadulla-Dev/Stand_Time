@@ -31,11 +31,11 @@ fun ZenArchitectureClockStyle(parts: GalleryClockParts, language: StandTimeLangu
         Box(modifier = Modifier.size(500.dp).clip(CircleShape).background(Color.Transparent))
         Box(modifier = Modifier.size(700.dp).clip(CircleShape).background(Color.Transparent))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFFF4F4F5), fontSize = 128.sp, fontWeight = FontWeight.ExtraLight)
+            Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFFF4F4F5), fontSize = 168.sp, fontWeight = FontWeight.ExtraLight)
             Row(modifier = Modifier.padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
-                Box(modifier = Modifier.size(width = 48.dp, height = 1.dp).background(Color(0xFF27272A)))
-                Text(localizedStringResource(R.string.gallery_zen_sanctuary, language), color = Color(0xFFA1A1AA), fontSize = 11.sp, letterSpacing = 6.sp)
-                Box(modifier = Modifier.size(width = 48.dp, height = 1.dp).background(Color(0xFF27272A)))
+                Box(modifier = Modifier.size(width = 52.dp, height = 2.dp).background(Color(0xFF27272A)))
+                Text(localizedStringResource(R.string.gallery_zen_sanctuary, language), color = Color(0xFFA1A1AA), fontSize = 16.sp, letterSpacing = 6.sp)
+                Box(modifier = Modifier.size(width = 52.dp, height = 2.dp).background(Color(0xFF27272A)))
             }
         }
     }

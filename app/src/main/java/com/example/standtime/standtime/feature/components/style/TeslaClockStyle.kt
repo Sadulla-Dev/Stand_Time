@@ -31,8 +31,8 @@ fun TeslaClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accen
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = "${parts.hours}:${parts.minutes}", style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 76.sp), color = Color(0xFFF5F5F5))
+        Column(modifier = Modifier.weight(1f).padding(start = 20.dp)) {
+            Text(text = "${parts.hours}:${parts.minutes}", style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 96.sp), color = Color(0xFFF5F5F5))
             Text(
                 text = "P  R  N  D",
                 modifier = Modifier.padding(top = 10.dp),
@@ -50,7 +50,7 @@ fun TeslaClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, accen
             )
             GalleryMetricCard(
                 localizedStringResource(R.string.gallery_tesla_temp, language),
-                localizedStringResource(R.string.gallery_tesla_temp_value, language),
+                parts.weatherTemperature,
                 Color(0xFF1A1A1A),
                 Color.White
             )

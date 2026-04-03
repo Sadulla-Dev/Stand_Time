@@ -21,7 +21,7 @@ fun CyberpunkClockStyle(parts: GalleryClockParts, language: StandTimeLanguage, a
         modifier = modifier.background(Brush.linearGradient(listOf(Color.Black, Color(0xFF2E1065)))),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFFC026D3), fontSize = 108.sp, fontWeight = FontWeight.Black)
-        Text(text = "${parts.hours}:${parts.minutes}", modifier = Modifier.padding(start = 6.dp, top = 6.dp), color = accentColor, fontSize = 108.sp, fontWeight = FontWeight.Black)
+        Text(text = "${parts.hours}:${parts.minutes}", color = Color(0xFFC026D3), fontSize = 219.sp, fontWeight = FontWeight.Black)
+        Text(text = "${parts.hours}:${parts.minutes}", modifier = Modifier.padding(start = 6.dp, top = 6.dp), color = accentColor, fontSize = 219.sp, fontWeight = FontWeight.Black)
     }
 }
