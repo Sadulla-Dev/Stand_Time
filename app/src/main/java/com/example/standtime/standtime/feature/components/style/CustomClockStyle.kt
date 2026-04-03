@@ -31,6 +31,7 @@ import com.example.standtime.ui.theme.StandTimeFontFamilies
 fun CustomClockStyle(
     parts: GalleryClockParts,
     custom: CustomClockStyleSettings,
+    isStudio: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val scale = LocalGalleryScaleFactor.current
@@ -44,16 +45,22 @@ fun CustomClockStyle(
             add(Color(custom.backgroundEndColor.argb))
         }
     }
+    val backgroundBrush = if (isStudio) {
+        Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+    } else {
+        if (backgroundColors.size == 1) {
+            Brush.linearGradient(
+                listOf(backgroundColors.first(), backgroundColors.first())
+            )
+        } else {
+            Brush.linearGradient(backgroundColors)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                if (backgroundColors.size == 1) {
-                    Brush.linearGradient(listOf(backgroundColors.first(), backgroundColors.first()))
-                } else {
-                    Brush.linearGradient(backgroundColors)
-                }
-            ),
+            .background(brush = backgroundBrush),
         contentAlignment = Alignment.Center
     ) {
         val contentModifier = Modifier.graphicsLayer {

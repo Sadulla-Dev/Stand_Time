@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -72,6 +73,7 @@ import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 import com.example.standtime.standtime.feature.utils.StandTimeUiState
 import com.example.standtime.standtime.feature.utils.localizedStringResource
 import com.example.standtime.ui.theme.StandTimeFontFamilies
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private const val PreviewReductionFactor = 3f
@@ -1064,6 +1066,23 @@ private fun PhonePreviewCanvas(
     custom: com.example.standtime.standtime.feature.utils.CustomClockStyleSettings,
     onIntent: (StandTimeIntent) -> Unit
 ) {
+    var previewScale by remember(custom.scale) { mutableFloatStateOf(custom.scale) }
+    var previewOffsetX by remember(custom.offsetX) { mutableFloatStateOf(custom.offsetX) }
+    var previewOffsetY by remember(custom.offsetY) { mutableFloatStateOf(custom.offsetY) }
+
+    LaunchedEffect(previewScale, previewOffsetX, previewOffsetY) {
+        delay(90)
+        if (kotlin.math.abs(previewScale - custom.scale) > 0.001f) {
+            onIntent(StandTimeIntent.ChangeCustomClockScale(previewScale))
+        }
+        if (
+            kotlin.math.abs(previewOffsetX - custom.offsetX) > 0.5f ||
+            kotlin.math.abs(previewOffsetY - custom.offsetY) > 0.5f
+        ) {
+            onIntent(StandTimeIntent.ChangeCustomClockOffset(previewOffsetX, previewOffsetY))
+        }
+    }
+
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -1076,17 +1095,9 @@ private fun PhonePreviewCanvas(
                 .clip(RoundedCornerShape(34.dp))
                 .pointerInput(custom.scale, custom.offsetX, custom.offsetY) {
                     detectTransformGestures { _, pan, zoom, _ ->
-                        onIntent(
-                            StandTimeIntent.ChangeCustomClockScale(
-                                (custom.scale * zoom).coerceIn(0.45f, 3.5f)
-                            )
-                        )
-                        onIntent(
-                            StandTimeIntent.ChangeCustomClockOffset(
-                                custom.offsetX + (pan.x * PreviewReductionFactor),
-                                custom.offsetY + (pan.y * PreviewReductionFactor)
-                            )
-                        )
+                        previewScale = (previewScale * zoom).coerceIn(0.45f, 3.5f)
+                        previewOffsetX += pan.x * PreviewReductionFactor
+                        previewOffsetY += pan.y * PreviewReductionFactor
                     }
                 },
             contentAlignment = Alignment.Center
@@ -1130,7 +1141,12 @@ private fun PhonePreviewCanvas(
                 ) {
                     CustomClockStyle(
                         parts = parts,
-                        custom = custom,
+                        custom = custom.copy(
+                            scale = previewScale,
+                            offsetX = previewOffsetX,
+                            offsetY = previewOffsetY
+                        ),
+                        isStudio = true,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
