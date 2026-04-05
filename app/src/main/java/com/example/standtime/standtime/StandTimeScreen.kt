@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -352,7 +353,6 @@ private fun ClockStylesPage(
             }
         }
 
-        // ── Top overlay: battery + style counter ──────────────────────────
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -362,21 +362,7 @@ private fun ClockStylesPage(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = localizedStringResource(
-                    if (state.isCharging) R.string.gallery_charging_status else R.string.gallery_battery_status,
-                    language,
-                    state.batteryLevel
-                ),
-                modifier = Modifier
-                    .galleryOverlaySurface(RoundedCornerShape(999.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-                letterSpacing = 1.2.sp,
-                color = GalleryOverlayContentColor
-            )
+            Spacer(Modifier.weight(1f))
             Text(
                 text = localizedStringResource(
                     R.string.gallery_style_counter,

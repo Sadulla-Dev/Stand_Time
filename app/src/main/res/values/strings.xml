@@ -159,7 +159,8 @@
     <string name="gallery_swiss_subtitle">Standard Studio Typeface</string>
     <string name="gallery_style_tokyo_neon">Tokyo Neon Pulse</string>
     <string name="gallery_style_paper">Paper Minimalism</string>
-    <string name="gallery_style_glitch">Cyber Glitch</string>
+    <string name="gallery_style_glitch">Glitch Signal</string>
+    <string name="gallery_style_cyber_glitch">Cyber Glitch</string>
     <string name="gallery_style_abstract">Abstract Geometric</string>
     <string name="gallery_style_typography">Typography Focus</string>
     <string name="gallery_style_arabic">Arabic Majlis</string>
@@ -230,4 +231,13 @@
     <string name="gallery_abstract_edition">Composition No. 7</string>
     <string name="gallery_abstract_caption">Modernism / 2024 / Digital Print</string>
     <string name="gallery_nothing_dot_label">PURE DIGITAL SOUL</string>
+    <string name="gallery_style_matrix_rain">Matrix Rain</string>
+    <string name="gallery_style_neon_plasma">Neon Plasma</string>
+    <string name="gallery_style_hologram">Hologram</string>
+    <string name="gallery_style_retro_terminal">Retro Terminal</string>
+    <string name="gallery_style_quantum">Quantum</string>
+    <string name="gallery_style_cyber_grid">Cyber Grid</string>
+    <string name="gallery_style_vapor_wave">Vapor Wave</string>
+    <string name="gallery_style_aurora">Aurora</string>
+    <string name="gallery_style_dark_soul">Dark Soul</string>
 </resources>
