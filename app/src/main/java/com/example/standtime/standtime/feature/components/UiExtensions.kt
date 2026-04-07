@@ -2,6 +2,8 @@ package com.example.standtime.standtime.feature.components
 
 import androidx.compose.ui.graphics.Color
 import com.example.standtime.standtime.feature.utils.AccentPalette
+import com.example.standtime.standtime.feature.utils.PomodoroPhase
+import com.example.standtime.standtime.feature.utils.PomodoroPreset
 import com.example.standtime.standtime.feature.utils.StandTimeUiState
 import com.example.standtime.ui.theme.CoralAccent
 import com.example.standtime.ui.theme.LimeAccent
@@ -11,6 +13,25 @@ internal fun StandTimeUiState.remainingPomodoroText(): String {
     val minutes = pomodoroRemainingSeconds / 60
     val seconds = pomodoroRemainingSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
+}
+
+internal fun StandTimeUiState.selectedPomodoroPreset(): PomodoroPreset =
+    pomodoroPresets.firstOrNull { it.focusMinutes == selectedPomodoroMinutes }
+        ?: pomodoroPresets.first()
+
+internal fun StandTimeUiState.pomodoroTotalSeconds(phase: PomodoroPhase = pomodoroPhase): Int {
+    val preset = selectedPomodoroPreset()
+    return when (phase) {
+        PomodoroPhase.FOCUS -> preset.focusMinutes * 60
+        PomodoroPhase.SHORT_BREAK -> preset.shortBreakMinutes * 60
+        PomodoroPhase.LONG_BREAK -> preset.longBreakMinutes * 60
+    }
+}
+
+internal fun StandTimeUiState.pomodoroProgress(): Float {
+    val totalSeconds = pomodoroTotalSeconds().coerceAtLeast(1)
+    val elapsedSeconds = (totalSeconds - pomodoroRemainingSeconds).coerceIn(0, totalSeconds)
+    return elapsedSeconds / totalSeconds.toFloat()
 }
 
 internal fun StandTimeUiState.accentColor(): Color = when (accentPalette) {

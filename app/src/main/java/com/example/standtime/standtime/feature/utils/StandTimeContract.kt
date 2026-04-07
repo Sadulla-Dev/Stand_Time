@@ -44,8 +44,16 @@ enum class ClockStyle {
     MINIMAL
 }
 
+enum class PomodoroPhase {
+    FOCUS,
+    SHORT_BREAK,
+    LONG_BREAK
+}
+
 data class PomodoroPreset(
-    val minutes: Int,
+    val focusMinutes: Int,
+    val shortBreakMinutes: Int,
+    val longBreakMinutes: Int,
     val label: String
 )
 
@@ -112,11 +120,13 @@ data class StandTimeUiState(
     val showPomodoro: Boolean = true,
     val showSeconds: Boolean = true,
     val pomodoroPresets: List<PomodoroPreset> = listOf(
-        PomodoroPreset(15, "15"),
-        PomodoroPreset(25, "25"),
-        PomodoroPreset(50, "50")
+        PomodoroPreset(15, 5, 12, "15"),
+        PomodoroPreset(25, 5, 15, "25"),
+        PomodoroPreset(50, 10, 20, "50")
     ),
     val selectedPomodoroMinutes: Int = 25,
+    val pomodoroPhase: PomodoroPhase = PomodoroPhase.FOCUS,
+    val pomodoroCompletedFocusSessions: Int = 0,
     val pomodoroRemainingSeconds: Int = 25 * 60,
     val isPomodoroRunning: Boolean = false,
     val mediaPermissionGranted: Boolean = false,
@@ -151,8 +161,10 @@ sealed interface StandTimeIntent {
     data class LocationPermissionChanged(val granted: Boolean) : StandTimeIntent
     data object RefreshWeather : StandTimeIntent
     data class SelectPomodoroPreset(val minutes: Int) : StandTimeIntent
+    data class SetPomodoroPhase(val phase: PomodoroPhase) : StandTimeIntent
     data object TogglePomodoroTimer : StandTimeIntent
     data object ResetPomodoro : StandTimeIntent
+    data object SkipPomodoroPhase : StandTimeIntent
     data object ToggleMediaPlayback : StandTimeIntent
     data object SkipToNextTrack : StandTimeIntent
     data class ChangeCustomClockFont(val font: CustomClockFont) : StandTimeIntent

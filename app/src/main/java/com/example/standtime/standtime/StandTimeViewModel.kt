@@ -21,6 +21,7 @@ import com.example.standtime.standtime.feature.utils.CustomClockLayout
 import com.example.standtime.standtime.feature.utils.CustomClockFont
 import com.example.standtime.standtime.feature.utils.CustomClockStyleSettings
 import com.example.standtime.standtime.feature.utils.CustomColorValue
+import com.example.standtime.standtime.feature.utils.PomodoroPhase
 import com.example.standtime.standtime.feature.utils.SavedCustomClockStyle
 import com.example.standtime.standtime.feature.utils.StandTimeIntent
 import com.example.standtime.standtime.feature.utils.StandTimeLanguage
@@ -176,7 +177,21 @@ class StandTimeViewModel(
             is StandTimeIntent.SelectPomodoroPreset -> _uiState.update { state ->
                 state.copy(
                     selectedPomodoroMinutes = intent.minutes,
-                    pomodoroRemainingSeconds = intent.minutes * 60,
+                    pomodoroPhase = PomodoroPhase.FOCUS,
+                    pomodoroCompletedFocusSessions = 0,
+                    pomodoroRemainingSeconds = pomodoroDurationSeconds(intent.minutes, state.pomodoroPresets, PomodoroPhase.FOCUS),
+                    isPomodoroRunning = false
+                )
+            }
+
+            is StandTimeIntent.SetPomodoroPhase -> _uiState.update { state ->
+                state.copy(
+                    pomodoroPhase = intent.phase,
+                    pomodoroRemainingSeconds = pomodoroDurationSeconds(
+                        state.selectedPomodoroMinutes,
+                        state.pomodoroPresets,
+                        intent.phase
+                    ),
                     isPomodoroRunning = false
                 )
             }
@@ -187,9 +202,17 @@ class StandTimeViewModel(
 
             StandTimeIntent.ResetPomodoro -> _uiState.update { state ->
                 state.copy(
-                    pomodoroRemainingSeconds = state.selectedPomodoroMinutes * 60,
+                    pomodoroRemainingSeconds = pomodoroDurationSeconds(
+                        state.selectedPomodoroMinutes,
+                        state.pomodoroPresets,
+                        state.pomodoroPhase
+                    ),
                     isPomodoroRunning = false
                 )
+            }
+
+            StandTimeIntent.SkipPomodoroPhase -> _uiState.update { state ->
+                advancePomodoroState(state, keepRunning = false)
             }
 
             StandTimeIntent.ToggleMediaPlayback -> StandTimeMediaService.togglePlayback()
@@ -609,15 +632,60 @@ class StandTimeViewModel(
                     if (!state.isPomodoroRunning) {
                         state
                     } else if (state.pomodoroRemainingSeconds <= 1) {
-                        state.copy(
-                            pomodoroRemainingSeconds = state.selectedPomodoroMinutes * 60,
-                            isPomodoroRunning = false
-                        )
+                        advancePomodoroState(state, keepRunning = true)
                     } else {
                         state.copy(pomodoroRemainingSeconds = state.pomodoroRemainingSeconds - 1)
                     }
                 }
             }
+        }
+    }
+
+    private fun advancePomodoroState(
+        state: StandTimeUiState,
+        keepRunning: Boolean
+    ): StandTimeUiState {
+        val nextPhase = when (state.pomodoroPhase) {
+            PomodoroPhase.FOCUS -> {
+                if ((state.pomodoroCompletedFocusSessions + 1) % 4 == 0) {
+                    PomodoroPhase.LONG_BREAK
+                } else {
+                    PomodoroPhase.SHORT_BREAK
+                }
+            }
+
+            PomodoroPhase.SHORT_BREAK,
+            PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
+        }
+
+        val nextCompletedFocusSessions = when (state.pomodoroPhase) {
+            PomodoroPhase.FOCUS -> state.pomodoroCompletedFocusSessions + 1
+            PomodoroPhase.LONG_BREAK -> 0
+            PomodoroPhase.SHORT_BREAK -> state.pomodoroCompletedFocusSessions
+        }
+
+        return state.copy(
+            pomodoroPhase = nextPhase,
+            pomodoroCompletedFocusSessions = nextCompletedFocusSessions,
+            pomodoroRemainingSeconds = pomodoroDurationSeconds(
+                selectedMinutes = state.selectedPomodoroMinutes,
+                presets = state.pomodoroPresets,
+                phase = nextPhase
+            ),
+            isPomodoroRunning = keepRunning
+        )
+    }
+
+    private fun pomodoroDurationSeconds(
+        selectedMinutes: Int,
+        presets: List<com.example.standtime.standtime.feature.utils.PomodoroPreset>,
+        phase: PomodoroPhase
+    ): Int {
+        val preset = presets.firstOrNull { it.focusMinutes == selectedMinutes } ?: presets.first()
+        return when (phase) {
+            PomodoroPhase.FOCUS -> preset.focusMinutes * 60
+            PomodoroPhase.SHORT_BREAK -> preset.shortBreakMinutes * 60
+            PomodoroPhase.LONG_BREAK -> preset.longBreakMinutes * 60
         }
     }
 

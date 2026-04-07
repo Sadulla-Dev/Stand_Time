@@ -76,7 +76,7 @@ fun GlitchClockStyle(
                 text = "${parts.hours}:${parts.minutes}:${parts.seconds}",
                 style = TextStyle(
                     color = Color(0xFFFF0000).copy(alpha = 0.55f),
-                    fontSize = 72.sp,
+                    fontSize = 122.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 ),
@@ -87,7 +87,7 @@ fun GlitchClockStyle(
                 text = "${parts.hours}:${parts.minutes}:${parts.seconds}",
                 style = TextStyle(
                     color = Color(0xFF00FFFF).copy(alpha = 0.55f),
-                    fontSize = 72.sp,
+                    fontSize = 122.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 ),
@@ -100,7 +100,7 @@ fun GlitchClockStyle(
             text = "${parts.hours}:${parts.minutes}:${parts.seconds}",
             style = TextStyle(
                 color = Color(0xFFFF4466),
-                fontSize = 72.sp,
+                fontSize = 122.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 shadow = Shadow(color = Color(0xFFFF0044), blurRadius = 12f)

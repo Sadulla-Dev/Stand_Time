@@ -8,12 +8,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,7 +59,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -73,9 +77,12 @@ import com.example.standtime.standtime.feature.components.galleryParts
 import com.example.standtime.standtime.feature.components.galleryStyleAt
 import com.example.standtime.standtime.feature.components.galleryStyleCount
 import com.example.standtime.standtime.feature.components.galleryStyles
+import com.example.standtime.standtime.feature.components.pomodoroProgress
+import com.example.standtime.standtime.feature.components.pomodoroTotalSeconds
 import com.example.standtime.standtime.feature.components.remainingPomodoroText
 import com.example.standtime.standtime.feature.utils.AccentPalette
 import com.example.standtime.standtime.feature.utils.CalendarDayCell
+import com.example.standtime.standtime.feature.utils.PomodoroPhase
 import com.example.standtime.standtime.feature.utils.StandTimeIntent
 import com.example.standtime.standtime.feature.utils.StandTimeLanguage
 import com.example.standtime.standtime.feature.utils.StandTimeUiState
@@ -1079,61 +1086,247 @@ private fun PomodoroCard(
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit
 ) {
+    val progress by animateFloatAsState(
+        targetValue = state.pomodoroProgress(),
+        animationSpec = tween(durationMillis = 500),
+        label = "pomodoroProgress"
+    )
+    val currentPhaseLabel = localizedStringResource(pomodoroPhaseLabelRes(state.pomodoroPhase), language)
+    val nextPhase = when (state.pomodoroPhase) {
+        PomodoroPhase.FOCUS -> {
+            if ((state.pomodoroCompletedFocusSessions + 1) % 4 == 0) PomodoroPhase.LONG_BREAK
+            else PomodoroPhase.SHORT_BREAK
+        }
+
+        PomodoroPhase.SHORT_BREAK,
+        PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
+    }
+    val nextPhaseLabel = localizedStringResource(pomodoroPhaseLabelRes(nextPhase), language)
+    val cycleIndex = when (state.pomodoroPhase) {
+        PomodoroPhase.FOCUS -> (state.pomodoroCompletedFocusSessions % 4) + 1
+        PomodoroPhase.SHORT_BREAK -> state.pomodoroCompletedFocusSessions.coerceIn(1, 4)
+        PomodoroPhase.LONG_BREAK -> 4
+    }
+    val statusText = when {
+        state.isPomodoroRunning && state.pomodoroPhase == PomodoroPhase.FOCUS ->
+            localizedStringResource(R.string.pomodoro_running, language)
+
+        state.isPomodoroRunning ->
+            localizedStringResource(R.string.pomodoro_break_running, language)
+
+        else -> localizedStringResource(R.string.pomodoro_ready, language)
+    }
+
     PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(
-                text = localizedStringResource(R.string.pomodoro_title, language),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = state.remainingPomodoroText(),
-                style = MaterialTheme.typography.displaySmall,
-                color = accentColor
-            )
-            Text(
-                text = if (state.isPomodoroRunning) localizedStringResource(
-                    R.string.pomodoro_running,
-                    language
+         Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = localizedStringResource(R.string.pomodoro_title, language),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                else localizedStringResource(R.string.pomodoro_paused, language),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = accentColor.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = currentPhaseLabel,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = accentColor
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = localizedStringResource(
+                            R.string.pomodoro_cycle_progress,
+                            language,
+                            cycleIndex,
+                            4
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = localizedStringResource(
+                            R.string.pomodoro_next_up,
+                            language,
+                            nextPhaseLabel
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                PomodoroProgressRing(
+                    progress = progress,
+                    accentColor = accentColor,
+                    modifier = Modifier.size(154.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = state.remainingPomodoroText(),
+                            style = MaterialTheme.typography.displaySmall,
+                            color = accentColor,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = localizedStringResource(
+                                R.string.pomodoro_preset_label,
+                                language,
+                                (state.pomodoroTotalSeconds() / 60).toString()
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
             ChipRow {
-                state.pomodoroPresets.forEach { preset ->
+                listOf(
+                    PomodoroPhase.FOCUS,
+                    PomodoroPhase.SHORT_BREAK,
+                    PomodoroPhase.LONG_BREAK
+                ).forEach { phase ->
                     FilterChip(
-                        selected = state.selectedPomodoroMinutes == preset.minutes,
-                        onClick = { onIntent(StandTimeIntent.SelectPomodoroPreset(preset.minutes)) },
+                        selected = state.pomodoroPhase == phase,
+                        onClick = { onIntent(StandTimeIntent.SetPomodoroPhase(phase)) },
                         label = {
                             Text(
                                 localizedStringResource(
-                                    R.string.pomodoro_preset_label, language, preset.label
+                                    pomodoroPhaseLabelRes(phase),
+                                    language
                                 )
                             )
-                        })
+                        }
+                    )
                 }
             }
+
             ChipRow {
-                FilterChip(
-                    selected = state.isPomodoroRunning,
-                    onClick = { onIntent(StandTimeIntent.TogglePomodoroTimer) },
-                    label = {
-                        Text(
-                            if (state.isPomodoroRunning) localizedStringResource(
-                                R.string.pomodoro_pause,
-                                language
+                state.pomodoroPresets.forEach { preset ->
+                    FilterChip(
+                        selected = state.selectedPomodoroMinutes == preset.focusMinutes,
+                        onClick = { onIntent(StandTimeIntent.SelectPomodoroPreset(preset.focusMinutes)) },
+                        label = {
+                            Text(
+                                localizedStringResource(
+                                    R.string.pomodoro_preset_label,
+                                    language,
+                                    preset.label
+                                )
                             )
-                            else localizedStringResource(R.string.pomodoro_start, language)
-                        )
-                    })
-                FilterChip(
-                    selected = false,
+                        }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { onIntent(StandTimeIntent.TogglePomodoroTimer) },
+                    modifier = Modifier.weight(1.2f),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = accentColor,
+                        contentColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Text(
+                        if (state.isPomodoroRunning) {
+                            localizedStringResource(R.string.pomodoro_pause, language)
+                        } else {
+                            localizedStringResource(R.string.pomodoro_start, language)
+                        }
+                    )
+                }
+
+                TextButton(
                     onClick = { onIntent(StandTimeIntent.ResetPomodoro) },
-                    label = { Text(localizedStringResource(R.string.pomodoro_reset, language)) })
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(localizedStringResource(R.string.pomodoro_reset, language))
+                }
+
+                TextButton(
+                    onClick = { onIntent(StandTimeIntent.SkipPomodoroPhase) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(localizedStringResource(R.string.pomodoro_skip, language))
+                }
             }
         }
     }
+}
+
+@Composable
+private fun PomodoroProgressRing(
+    progress: Float,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 12.dp.toPx()
+            drawArc(
+                color = accentColor.copy(alpha = 0.14f),
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+            drawArc(
+                color = accentColor,
+                startAngle = -90f,
+                sweepAngle = 360f * progress.coerceIn(0f, 1f),
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(118.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)),
+            contentAlignment = Alignment.Center,
+            content = content
+        )
+    }
+}
+
+private fun pomodoroPhaseLabelRes(phase: PomodoroPhase): Int = when (phase) {
+    PomodoroPhase.FOCUS -> R.string.pomodoro_focus
+    PomodoroPhase.SHORT_BREAK -> R.string.pomodoro_short_break
+    PomodoroPhase.LONG_BREAK -> R.string.pomodoro_long_break
 }
 
 @Composable

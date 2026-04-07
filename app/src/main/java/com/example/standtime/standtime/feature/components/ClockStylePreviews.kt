@@ -130,17 +130,6 @@ private fun BraunClockStylePreview() = ClockPreview {
 
 @ClockLandscapePreview
 @Composable
-private fun TerminalClockStylePreview() = ClockPreview {
-    _root_ide_package_.com.example.standtime.standtime.feature.components.style.TerminalClockStyle(
-        previewParts,
-        StandTimeLanguage.ENGLISH,
-        previewAccent,
-        it
-    )
-}
-
-@ClockLandscapePreview
-@Composable
 private fun CyberpunkClockStylePreview() = ClockPreview {
     _root_ide_package_.com.example.standtime.standtime.feature.components.style.CyberpunkClockStyle(
         previewParts,
