@@ -1,17 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,13 +29,7 @@ fun ClockworkClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "clockwork")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
 
     Box(
         modifier = modifier.background(Color(0xFF080400)),
@@ -65,9 +53,30 @@ fun ClockworkClockStyle(
                 drawCircle(color = col, radius = r * 0.25f, center = Offset(gx, gy), style = Stroke(width = 0.8f))
             }
 
-            drawGear(cx - size.width * 0.22f, cy, size.height * 0.28f, 12, t, Color(0xFFC88228).copy(alpha = 0.4f))
-            drawGear(cx + size.width * 0.22f, cy, size.height * 0.22f, 9, -t * 1.33f, Color(0xFFA06E1E).copy(alpha = 0.35f))
-            drawGear(cx, cy - size.height * 0.22f, size.height * 0.16f, 7, t * 1.9f, Color(0xFFD09632).copy(alpha = 0.30f))
+            drawGear(
+                cx - size.width * 0.22f,
+                cy,
+                size.height * 0.28f,
+                12,
+                timeSeconds * 0.72f,
+                Color(0xFFC88228).copy(alpha = 0.4f)
+            )
+            drawGear(
+                cx + size.width * 0.22f,
+                cy,
+                size.height * 0.22f,
+                9,
+                -timeSeconds * 0.96f,
+                Color(0xFFA06E1E).copy(alpha = 0.35f)
+            )
+            drawGear(
+                cx,
+                cy - size.height * 0.22f,
+                size.height * 0.16f,
+                7,
+                timeSeconds * 1.28f,
+                Color(0xFFD09632).copy(alpha = 0.30f)
+            )
 
             // Tick ring
             for (i in 0 until 60) {

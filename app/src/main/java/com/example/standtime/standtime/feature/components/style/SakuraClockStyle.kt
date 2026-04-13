@@ -112,7 +112,7 @@ fun SakuraClockStyle(
             text = "${parts.hours}:${parts.minutes}:${parts.seconds}",
             style = TextStyle(
                 color = Color(0xFFFFDDEE),
-                fontSize = 122.sp,
+                fontSize = 162.sp,
                 fontWeight = FontWeight.Bold,
                 shadow = Shadow(color = Color(0xFFFF88AA), blurRadius = 20f)
             )

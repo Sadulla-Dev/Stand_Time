@@ -66,6 +66,14 @@
     <string name="charging_stand_mode_hint">Default behavior: keep a small background notification active, then show a charging alert instead of opening the screen.</string>
     <string name="burn_in_protection_label">Burn-in protection</string>
     <string name="tap_reveal_info_label">Tap to reveal info</string>
+    <string name="auto_dim_night_mode_label">Auto-dim at night</string>
+    <string name="auto_dim_night_mode_hint">Uses the ambient light sensor to lower brightness in dark rooms.</string>
+    <string name="auto_dim_night_mode_unavailable">Ambient light sensor not available on this device.</string>
+    <string name="sleep_color_filter_label">Sleep color filter</string>
+    <string name="sleep_color_filter_hint">Adds a warm red-orange night filter when the room gets dark.</string>
+    <string name="wave_to_wake_label">Wave to wake</string>
+    <string name="wave_to_wake_hint">Keeps the clock pitch black and reveals it for a few seconds when you wave over the phone.</string>
+    <string name="wave_to_wake_unavailable">Proximity sensor not available on this device.</string>
     <string name="physics_bubble_intro_eyebrow">Stand Time</string>
     <string name="physics_bubble_intro_title">Your phone, now a clock.</string>
     <string name="physics_bubble_intro_description">Beautiful standby clocks, custom styles, and a cleaner desk or bedside experience.</string>

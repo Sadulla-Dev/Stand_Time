@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -29,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -52,6 +55,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -100,6 +105,7 @@ import com.example.standtime.standtime.feature.utils.localizedStringResource
 import com.example.standtime.ui.theme.CoralAccent
 import com.example.standtime.ui.theme.LimeAccent
 import com.example.standtime.ui.theme.SkyAccent
+import kotlinx.coroutines.launch
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root
@@ -107,7 +113,12 @@ import com.example.standtime.ui.theme.SkyAccent
 
 @Composable
 fun StandTimeRoute(
-    state: StandTimeUiState, onIntent: (StandTimeIntent) -> Unit, modifier: Modifier = Modifier
+    state: StandTimeUiState,
+    onIntent: (StandTimeIntent) -> Unit,
+    waveToWakeRevealActive: Boolean,
+    ambientLightSensorAvailable: Boolean,
+    proximitySensorAvailable: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val language = state.language
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -220,6 +231,7 @@ fun StandTimeRoute(
                             language = language,
                             accentColor = accentColor,
                             onIntent = onIntent,
+                            waveToWakeRevealActive = waveToWakeRevealActive,
                             onOpenCustomStudio = {
                                 if (state.savedCustomClockStyles.isNotEmpty()) {
                                     showCustomCreateChoice = true
@@ -243,7 +255,9 @@ fun StandTimeRoute(
                             language = language,
                             accentColor = accentColor,
                             onIntent = onIntent,
-                            onRequestLocationPermission = requestLocationPermission
+                            onRequestLocationPermission = requestLocationPermission,
+                            ambientLightSensorAvailable = ambientLightSensorAvailable,
+                            proximitySensorAvailable = proximitySensorAvailable
                         )
                     }
                 }
@@ -263,14 +277,16 @@ private fun ClockStylesPage(
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
+    waveToWakeRevealActive: Boolean,
     onOpenCustomStudio: () -> Unit
 ) {
     val stylesCount = galleryStyleCount(state.savedCustomClockStyles)
     val lastStyleIndex = (stylesCount - 1).coerceAtLeast(0)
     val parts = state.galleryParts()
+    val scope = rememberCoroutineScope()
     var pendingDeleteStyleId by rememberSaveable { mutableStateOf<String?>(null) }
     var overlaysVisible by rememberSaveable { mutableStateOf(true) }
-    var overlayRevealTick by rememberSaveable { mutableStateOf(0) }
+    var overlayAutoHideToken by rememberSaveable { mutableStateOf(0) }
     val galleryPagerState = rememberPagerState(
         initialPage = state.selectedGalleryStyleIndex.coerceIn(0, lastStyleIndex),
         pageCount = { stylesCount })
@@ -279,11 +295,23 @@ private fun ClockStylesPage(
     val styleName = currentStyle.label ?: localizedStringResource(
         currentStyle.nameRes ?: R.string.gallery_style_custom, language
     )
+    val hasGalleryBottomOverlay = state.enableTapRevealInfo && (
+        state.mediaSessionAvailable ||
+            listOf(state.dayText, state.dateText).any { it.isNotBlank() } ||
+            (state.showWeather && listOf(state.weatherTemperature, state.weatherSummary).any { it.isNotBlank() }) ||
+            state.showBattery
+        )
     val overlayAlpha by animateFloatAsState(
         targetValue = if (overlaysVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 850),
         label = "galleryOverlayAlpha"
     )
+    val waveMaskAlpha by animateFloatAsState(
+        targetValue = if (state.enableWaveToWake && !waveToWakeRevealActive) 1f else 0f,
+        animationSpec = tween(durationMillis = 450),
+        label = "waveMaskAlpha"
+    )
+    val latestOverlayVisibility by rememberUpdatedState(overlaysVisible)
 
     LaunchedEffect(stylesCount, galleryPagerState.currentPage) {
         if (galleryPagerState.currentPage > lastStyleIndex) {
@@ -294,13 +322,16 @@ private fun ClockStylesPage(
     // Persist selected style to state
     LaunchedEffect(currentIndex) {
         onIntent(StandTimeIntent.ChangeGalleryStyleIndex(currentIndex))
-        overlayRevealTick++
+        overlaysVisible = true
+        overlayAutoHideToken++
     }
 
-    LaunchedEffect(currentIndex, overlayRevealTick) {
-        overlaysVisible = true
-        kotlinx.coroutines.delay(2000)
-        overlaysVisible = false
+    LaunchedEffect(overlayAutoHideToken) {
+        if (overlayAutoHideToken == 0) return@LaunchedEffect
+        kotlinx.coroutines.delay(5000)
+        if (latestOverlayVisibility) {
+            overlaysVisible = false
+        }
     }
 
     val customStyleToDelete =
@@ -342,7 +373,12 @@ private fun ClockStylesPage(
             Box(modifier = Modifier
                 .fillMaxSize()
                 .combinedClickable(onClick = {
-                    overlayRevealTick++
+                    if (overlaysVisible) {
+                        overlaysVisible = false
+                    } else {
+                        overlaysVisible = true
+                        overlayAutoHideToken++
+                    }
                 }, onLongClick = {
                     state.savedCustomClockStyles.getOrNull(page - galleryStyles.size)
                         ?.let { pendingDeleteStyleId = it.id }
@@ -389,69 +425,64 @@ private fun ClockStylesPage(
         }
 
         if (state.enableTapRevealInfo) {
-            Row(
+            GalleryBottomOverlay(
+                state = state,
+                language = language,
+                overlayAlpha = overlayAlpha,
+                onIntent = onIntent,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = 20.dp, end = 96.dp, bottom = 26.dp)
-                    .horizontalScroll(rememberScrollState())
-                    .graphicsLayer { alpha = overlayAlpha },
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GalleryInfoChip(
-                    text = listOf(state.dayText, state.dateText)
-                        .filter { it.isNotBlank() }
-                        .joinToString("  •  ")
-                )
-                if (state.showWeather && (state.weatherTemperature.isNotBlank() || state.weatherSummary.isNotBlank())) {
-                    GalleryInfoChip(
-                        text = listOf(state.weatherTemperature, state.weatherSummary)
-                            .filter { it.isNotBlank() }
-                            .joinToString("  •  ")
-                    )
-                }
-                if (state.showBattery) {
-                    GalleryInfoChip(
-                        text = localizedStringResource(
-                            if (state.isCharging) R.string.gallery_info_charging_value else R.string.gallery_info_battery_value,
-                            language,
-                            state.batteryLevel
-                        )
-                    )
-                }
-                if (state.mediaSessionAvailable) {
-                    GalleryMediaChip(
-                        state = state,
-                        language = language,
-                        onIntent = onIntent
-                    )
-                }
-            }
+                    .fillMaxWidth(0.74f)
+            )
         }
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 18.dp)
-                .horizontalScroll(rememberScrollState())
-                .graphicsLayer { alpha = overlayAlpha },
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(stylesCount) { index ->
-                Box(
-                    modifier = Modifier
-                        .width(if (index == currentIndex) 22.dp else 6.dp)
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            GalleryOverlayContentColor.copy(
-                                alpha = if (index == currentIndex) 0.95f else 0.25f
-                            )
-                        )
-                )
-            }
-        }
+//        Box(
+//            modifier = Modifier
+//                .align(Alignment.CenterStart)
+//                .fillMaxHeight()
+//                .padding(
+//                    start = 16.dp,
+//                    top = 24.dp,
+//                    bottom = if (hasGalleryBottomOverlay) 118.dp else 24.dp
+//                )
+//                .graphicsLayer { alpha = overlayAlpha },
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Column(
+//                modifier = Modifier.verticalScroll(rememberScrollState()),
+//                verticalArrangement = Arrangement.spacedBy(7.dp),
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                repeat(stylesCount) { index ->
+//                    Box(
+//                        modifier = Modifier
+//                            .width(if (index == currentIndex) 8.dp else 6.dp)
+//                            .height(if (index == currentIndex) 24.dp else 8.dp)
+//                            .clip(RoundedCornerShape(50))
+//                            .background(
+//                                GalleryOverlayContentColor.copy(
+//                                    alpha = if (index == currentIndex) 0.95f else 0.25f
+//                                )
+//                            )
+//                            .combinedClickable(
+//                                onClick = {
+//                                    if (galleryPagerState.currentPage != index) {
+//                                        scope.launch {
+//                                            galleryPagerState.animateScrollToPage(index)
+//                                        }
+//                                    } else {
+//                                        overlaysVisible = !overlaysVisible
+//                                        if (overlaysVisible) {
+//                                            overlayAutoHideToken++
+//                                        }
+//                                    }
+//                                }
+//                            )
+//                    )
+//                }
+//            }
+//        }
 
         Button(
             onClick = onOpenCustomStudio,
@@ -466,6 +497,15 @@ private fun ClockStylesPage(
                 .galleryOverlaySurface(CircleShape)) {
             Text(
                 text = "+", fontSize = 25.sp, fontFamily = FontFamily.Monospace
+            )
+        }
+
+        if (waveMaskAlpha > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .graphicsLayer { alpha = waveMaskAlpha }
             )
         }
     }
@@ -490,11 +530,72 @@ private fun GalleryInfoChip(text: String) {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GalleryBottomOverlay(
+    state: StandTimeUiState,
+    language: StandTimeLanguage,
+    overlayAlpha: Float,
+    onIntent: (StandTimeIntent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val dateInfo = listOf(state.dayText, state.dateText)
+        .filter { it.isNotBlank() }
+        .joinToString("  •  ")
+    val weatherInfo = listOf(state.weatherTemperature, state.weatherSummary)
+        .filter { it.isNotBlank() }
+        .joinToString("  •  ")
+    val batteryInfo = if (state.showBattery) {
+        localizedStringResource(
+            if (state.isCharging) R.string.gallery_info_charging_value else R.string.gallery_info_battery_value,
+            language,
+            state.batteryLevel
+        )
+    } else {
+        ""
+    }
+
+    val hasMetaItems = dateInfo.isNotBlank() ||
+        (state.showWeather && weatherInfo.isNotBlank()) ||
+        batteryInfo.isNotBlank()
+    if (!hasMetaItems && !state.mediaSessionAvailable) return
+
+    Column(
+        modifier = modifier
+            .widthIn(max = 520.dp)
+            .graphicsLayer { alpha = overlayAlpha },
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (hasMetaItems) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                GalleryInfoChip(dateInfo)
+                if (state.showWeather) {
+                    GalleryInfoChip(weatherInfo)
+                }
+                GalleryInfoChip(batteryInfo)
+            }
+        }
+
+        if (state.mediaSessionAvailable) {
+            GalleryMediaChip(
+                state = state,
+                language = language,
+                onIntent = onIntent,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
 @Composable
 private fun GalleryMediaChip(
     state: StandTimeUiState,
     language: StandTimeLanguage,
-    onIntent: (StandTimeIntent) -> Unit
+    onIntent: (StandTimeIntent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val title = state.mediaTitle.ifBlank {
         localizedStringResource(R.string.media_now_playing_fallback, language)
@@ -503,15 +604,15 @@ private fun GalleryMediaChip(
         state.mediaAppLabel.ifBlank { state.mediaAppName }
     }
     Row(
-        modifier = Modifier
+        modifier = modifier
             .galleryOverlaySurface(RoundedCornerShape(999.dp))
-            .padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 10.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(34.dp)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.10f)),
             contentAlignment = Alignment.Center
@@ -520,12 +621,12 @@ private fun GalleryMediaChip(
                 imageVector = Icons.Rounded.GraphicEq,
                 contentDescription = null,
                 tint = GalleryOverlayContentColor,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
         Column(
-            modifier = Modifier.width(148.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 text = title,
@@ -533,7 +634,7 @@ private fun GalleryMediaChip(
                 overflow = TextOverflow.Ellipsis,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 color = GalleryOverlayContentColor
             )
             Text(
@@ -548,7 +649,10 @@ private fun GalleryMediaChip(
         }
         IconButton(
             onClick = { onIntent(StandTimeIntent.ToggleMediaPlayback) },
-            modifier = Modifier.size(30.dp)
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
         ) {
             Icon(
                 imageVector = if (state.isMediaPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -562,7 +666,10 @@ private fun GalleryMediaChip(
         }
         IconButton(
             onClick = { onIntent(StandTimeIntent.SkipToNextTrack) },
-            modifier = Modifier.size(30.dp)
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
         ) {
             Icon(
                 imageVector = Icons.Rounded.SkipNext,
@@ -812,7 +919,9 @@ private fun SetupPage(
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
-    onRequestLocationPermission: () -> Unit
+    onRequestLocationPermission: () -> Unit,
+    ambientLightSensorAvailable: Boolean,
+    proximitySensorAvailable: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -826,7 +935,9 @@ private fun SetupPage(
             language = language,
             accentColor = accentColor,
             onIntent = onIntent,
-            onRequestLocationPermission = onRequestLocationPermission
+            onRequestLocationPermission = onRequestLocationPermission,
+            ambientLightSensorAvailable = ambientLightSensorAvailable,
+            proximitySensorAvailable = proximitySensorAvailable
         )
     }
 }
@@ -837,7 +948,9 @@ private fun SettingsCard(
     language: StandTimeLanguage,
     accentColor: Color,
     onIntent: (StandTimeIntent) -> Unit,
-    onRequestLocationPermission: () -> Unit
+    onRequestLocationPermission: () -> Unit,
+    ambientLightSensorAvailable: Boolean,
+    proximitySensorAvailable: Boolean
 ) {
     PanelCard(accentColor = accentColor, modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -963,6 +1076,45 @@ private fun SettingsCard(
                         label = localizedStringResource(R.string.tap_reveal_info_label, language),
                         checked = state.enableTapRevealInfo,
                         onCheckedChange = { onIntent(StandTimeIntent.SetTapRevealInfo(it)) }
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.auto_dim_night_mode_label, language),
+                        checked = state.enableAutoDimNightMode,
+                        onCheckedChange = { onIntent(StandTimeIntent.SetAutoDimNightMode(it)) },
+                        supportingText = localizedStringResource(
+                            if (ambientLightSensorAvailable) {
+                                R.string.auto_dim_night_mode_hint
+                            } else {
+                                R.string.auto_dim_night_mode_unavailable
+                            },
+                            language
+                        )
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.sleep_color_filter_label, language),
+                        checked = state.enableSleepColorFilter,
+                        onCheckedChange = { onIntent(StandTimeIntent.SetSleepColorFilter(it)) },
+                        supportingText = localizedStringResource(
+                            if (ambientLightSensorAvailable) {
+                                R.string.sleep_color_filter_hint
+                            } else {
+                                R.string.auto_dim_night_mode_unavailable
+                            },
+                            language
+                        )
+                    )
+                    SettingRow(
+                        label = localizedStringResource(R.string.wave_to_wake_label, language),
+                        checked = state.enableWaveToWake,
+                        onCheckedChange = { onIntent(StandTimeIntent.SetWaveToWake(it)) },
+                        supportingText = localizedStringResource(
+                            if (proximitySensorAvailable) {
+                                R.string.wave_to_wake_hint
+                            } else {
+                                R.string.wave_to_wake_unavailable
+                            },
+                            language
+                        )
                     )
                 }
             }

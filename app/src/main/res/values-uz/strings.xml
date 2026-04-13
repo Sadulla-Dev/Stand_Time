@@ -66,6 +66,14 @@
     <string name="charging_stand_mode_hint">Standart holat: kichik fon notification’i ishlab turadi, keyin ekran ochish o‘rniga zaryad notification’i chiqadi.</string>
     <string name="burn_in_protection_label">Burn-in himoyasi</string>
     <string name="tap_reveal_info_label">Bosganda ma\'lumotni ko\'rsatish</string>
+    <string name="auto_dim_night_mode_label">Tunda avtomatik xiralashtirish</string>
+    <string name="auto_dim_night_mode_hint">Qorong‘i xonada ambient light sensor orqali ekran yorug‘ligini pasaytiradi.</string>
+    <string name="auto_dim_night_mode_unavailable">Bu qurilmada ambient light sensor mavjud emas.</string>
+    <string name="sleep_color_filter_label">Uyqu filtri</string>
+    <string name="sleep_color_filter_hint">Xona qorong‘ilashganda iliq qizil-to‘q sariq night filter qo‘llaydi.</string>
+    <string name="wave_to_wake_label">Qo‘l bilan uyg‘otish</string>
+    <string name="wave_to_wake_hint">Ekranni qop-qora ushlab turadi va telefon ustidan qo‘l o‘tkazilganda soatni bir necha soniyaga ko‘rsatadi.</string>
+    <string name="wave_to_wake_unavailable">Bu qurilmada proximity sensor mavjud emas.</string>
     <string name="physics_bubble_intro_eyebrow">Stand Time</string>
     <string name="physics_bubble_intro_title">Telefoningiz endi soatga aylanadi.</string>
     <string name="physics_bubble_intro_description">Chiroyli standby clock’lar, custom style’lar va stol yoki krovat yonida yanada toza tajriba.</string>

@@ -1,25 +1,17 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,10 +22,15 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-data class Particle(
-    val x: Float, val y: Float,
-    val vx: Float, val vy: Float,
-    val r: Float, val hue: Float
+private data class QuantumParticle(
+    val x: Float,
+    val y: Float,
+    val swayX: Float,
+    val swayY: Float,
+    val radius: Float,
+    val hue: Float,
+    val phase: Float,
+    val speed: Float
 )
 
 @Composable
@@ -43,13 +40,21 @@ fun QuantumClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "quantum")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(6000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
+    val particles = remember {
+        List(28) {
+            QuantumParticle(
+                x = 0.12f + Random.nextFloat() * 0.76f,
+                y = 0.16f + Random.nextFloat() * 0.68f,
+                swayX = 0.018f + Random.nextFloat() * 0.026f,
+                swayY = 0.014f + Random.nextFloat() * 0.030f,
+                radius = 1.3f + Random.nextFloat() * 1.6f,
+                hue = 250f + Random.nextFloat() * 70f,
+                phase = Random.nextFloat() * FullTurnRadians,
+                speed = 0.45f + Random.nextFloat() * 0.65f
+            )
+        }
+    }
 
     Box(
         modifier = modifier.background(Color(0xFF05000F)),
@@ -63,15 +68,15 @@ fun QuantumClockStyle(
             for (i in 0..2) {
                 val ringRadius = size.width * 0.22f + i * 20f
                 val scaleY = 0.35f + i * 0.15f
-                val rotSpeed = t * (i + 1).toFloat() * 0.4f + i * (Math.PI / 3.0).toFloat()
+                val rotSpeed = timeSeconds * (0.28f + i * 0.12f) + i * (FullTurnRadians / 6f)
                 val ringHue = 260f + i * 20f
                 val ringColor = Color.hsv(ringHue, 0.8f, 0.9f).copy(alpha = 0.35f)
 
                 // Draw ellipse as multiple points
                 val steps = 60
                 for (s in 0 until steps) {
-                    val angle = s * (2f * Math.PI / steps).toFloat()
-                    val nextAngle = (s + 1) * (2f * Math.PI / steps).toFloat()
+                    val angle = s * (FullTurnRadians / steps)
+                    val nextAngle = (s + 1) * (FullTurnRadians / steps)
                     val cosR = cos(rotSpeed)
                     val sinR = sin(rotSpeed)
 
@@ -89,7 +94,7 @@ fun QuantumClockStyle(
                 }
 
                 // Orbiting dot
-                val dotAngle = t * (i + 1).toFloat() * 0.9f
+                val dotAngle = timeSeconds * (0.82f + i * 0.26f) + i * 0.9f
                 val dotX = cos(dotAngle) * ringRadius
                 val dotY = sin(dotAngle) * ringRadius * scaleY
                 val cosR = cos(rotSpeed)
@@ -104,13 +109,14 @@ fun QuantumClockStyle(
             }
 
             // Floating particles
-            val particleCount = 30
-            for (p in 0 until particleCount) {
-                val px = (p * 73.13f + t * 20f) % size.width
-                val py = (p * 47.71f + t * 15f) % size.height
+            for (particle in particles) {
+                val px = size.width * particle.x +
+                    sin(timeSeconds * particle.speed + particle.phase) * size.width * particle.swayX
+                val py = size.height * particle.y +
+                    cos(timeSeconds * (particle.speed * 0.82f) + particle.phase) * size.height * particle.swayY
                 drawCircle(
-                    color = Color.hsv(260f + p % 60f, 0.8f, 0.9f, alpha = 0.5f),
-                    radius = 1.5f + (p % 3) * 0.5f,
+                    color = Color.hsv(particle.hue, 0.8f, 0.9f, alpha = 0.45f),
+                    radius = particle.radius,
                     center = Offset(px, py)
                 )
             }
@@ -120,7 +126,7 @@ fun QuantumClockStyle(
             text = "${parts.hours}:${parts.minutes}:${parts.seconds}",
             style = TextStyle(
                 color = Color.White,
-                fontSize = 72.sp,
+                fontSize = 142.sp,
                 fontWeight = FontWeight.Bold,
                 shadow = Shadow(color = Color(0xFFCC88FF), blurRadius = 24f)
             )

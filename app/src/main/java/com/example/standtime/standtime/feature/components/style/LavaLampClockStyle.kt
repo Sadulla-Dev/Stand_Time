@@ -1,17 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,13 +36,7 @@ fun LavaLampClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "lava")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(8000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
 
     val blobs = remember {
         List(6) {
@@ -56,8 +44,8 @@ fun LavaLampClockStyle(
                 cx = 0.35f + Random.nextFloat() * 0.3f,
                 cy = 0.35f + Random.nextFloat() * 0.3f,
                 r = 0.08f + Random.nextFloat() * 0.06f,
-                sx = Random.nextFloat() * (2 * Math.PI).toFloat(),
-                sy = Random.nextFloat() * (2 * Math.PI).toFloat(),
+                sx = Random.nextFloat() * FullTurnRadians,
+                sy = Random.nextFloat() * FullTurnRadians,
                 speedX = 0.4f + Random.nextFloat() * 0.3f,
                 speedY = 0.3f + Random.nextFloat() * 0.4f
             )
@@ -70,8 +58,8 @@ fun LavaLampClockStyle(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             for (blob in blobs) {
-                val bx = size.width * (blob.cx + sin(t * blob.speedX + blob.sx) * 0.18f)
-                val by = size.height * (blob.cy + cos(t * blob.speedY + blob.sy) * 0.22f)
+                val bx = size.width * (blob.cx + sin(timeSeconds * blob.speedX + blob.sx) * 0.18f)
+                val by = size.height * (blob.cy + cos(timeSeconds * blob.speedY + blob.sy) * 0.22f)
                 val br = size.width * blob.r * 1.4f
                 drawCircle(
                     brush = Brush.radialGradient(

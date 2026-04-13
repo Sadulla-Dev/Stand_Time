@@ -1,17 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,13 +37,7 @@ fun NeuralNetClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "neural")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 100f,
-        animationSpec = infiniteRepeatable(tween(12000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
 
     val nodes = remember {
         mutableStateOf(
@@ -93,7 +81,7 @@ fun NeuralNetClockStyle(
                     val dx = ax - bx; val dy = ay - by
                     val dist = sqrt(dx * dx + dy * dy)
                     if (dist < maxDist) {
-                        val pulse = (0.3f + 0.3f * sin(t * 0.3f + i.toFloat() + j.toFloat())).coerceIn(0f,1f)
+                        val pulse = (0.3f + 0.3f * sin(timeSeconds * 0.42f + i.toFloat() + j.toFloat())).coerceIn(0f, 1f)
                         val alpha = pulse * (1f - dist / maxDist) * 0.4f
                         drawLine(
                             color = Color(0xFF00B4FF).copy(alpha = alpha),
@@ -107,7 +95,7 @@ fun NeuralNetClockStyle(
 
             // Nodes
             for (n in nodes.value) {
-                val glow = (0.4f + 0.3f * sin(t * 0.2f + n.phase)).coerceIn(0f, 1f)
+                val glow = (0.4f + 0.3f * sin(timeSeconds * 0.30f + n.phase)).coerceIn(0f, 1f)
                 drawCircle(
                     color = Color(0xFF00C8FF).copy(alpha = glow),
                     radius = 2.5f,

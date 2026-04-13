@@ -66,6 +66,14 @@
     <string name="charging_stand_mode_hint">Поведение по умолчанию: работает маленькое фоновое уведомление, а при подключении зарядки показывается алерт вместо открытия экрана.</string>
     <string name="burn_in_protection_label">Защита от выгорания</string>
     <string name="tap_reveal_info_label">Показывать инфо по касанию</string>
+    <string name="auto_dim_night_mode_label">Авто-затемнение ночью</string>
+    <string name="auto_dim_night_mode_hint">Использует датчик освещенности, чтобы уменьшать яркость в темной комнате.</string>
+    <string name="auto_dim_night_mode_unavailable">На этом устройстве нет датчика освещенности.</string>
+    <string name="sleep_color_filter_label">Ночной цветовой фильтр</string>
+    <string name="sleep_color_filter_hint">В темноте накладывает теплый красно-оранжевый фильтр для сна.</string>
+    <string name="wave_to_wake_label">Пробуждение взмахом</string>
+    <string name="wave_to_wake_hint">Держит экран полностью черным и показывает часы на несколько секунд, когда вы проводите рукой над телефоном.</string>
+    <string name="wave_to_wake_unavailable">На этом устройстве нет датчика приближения.</string>
     <string name="physics_bubble_intro_eyebrow">Stand Time</string>
     <string name="physics_bubble_intro_title">Теперь ваш телефон — это часы.</string>
     <string name="physics_bubble_intro_description">Красивые standby-часы, custom style’ы и более чистый опыт для стола или прикроватной тумбы.</string>

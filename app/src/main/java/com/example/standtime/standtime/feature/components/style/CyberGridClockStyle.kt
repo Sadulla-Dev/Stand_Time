@@ -1,17 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -34,13 +28,7 @@ fun CyberGridClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "cyber")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
 
     Box(
         modifier = modifier.background(Color(0xFF000510)),
@@ -65,8 +53,7 @@ fun CyberGridClockStyle(
 
             // Moving horizontal lines
             for (i in 0..7) {
-                val segment = 1f / 8f
-                val pct = ((i.toFloat() / 8f + t * 0.3f) % 1f).pow(2f)
+                val pct = ((i.toFloat() / 8f + timeSeconds * 0.10f) % 1f).pow(2f)
                 val y = horizon + (size.height - horizon) * pct
                 val alpha = (0.05f + pct * 0.25f).coerceIn(0f, 1f)
                 drawLine(

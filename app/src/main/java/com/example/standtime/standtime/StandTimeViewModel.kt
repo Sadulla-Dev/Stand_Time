@@ -63,6 +63,9 @@ class StandTimeViewModel(
         private const val KEY_ENABLE_CHARGING_STAND_MODE = "enable_charging_stand_mode"
         private const val KEY_ENABLE_BURN_IN_PROTECTION = "enable_burn_in_protection"
         private const val KEY_ENABLE_TAP_REVEAL_INFO = "enable_tap_reveal_info"
+        private const val KEY_ENABLE_AUTO_DIM_NIGHT_MODE = "enable_auto_dim_night_mode"
+        private const val KEY_ENABLE_SLEEP_COLOR_FILTER = "enable_sleep_color_filter"
+        private const val KEY_ENABLE_WAVE_TO_WAKE = "enable_wave_to_wake"
     }
 
     private val prefs = application.getSharedPreferences("stand_time_prefs", Context.MODE_PRIVATE)
@@ -85,6 +88,9 @@ class StandTimeViewModel(
             enableChargingStandMode = prefs.getBoolean(KEY_ENABLE_CHARGING_STAND_MODE, false),
             enableBurnInProtection = prefs.getBoolean(KEY_ENABLE_BURN_IN_PROTECTION, true),
             enableTapRevealInfo = prefs.getBoolean(KEY_ENABLE_TAP_REVEAL_INFO, true),
+            enableAutoDimNightMode = prefs.getBoolean(KEY_ENABLE_AUTO_DIM_NIGHT_MODE, false),
+            enableSleepColorFilter = prefs.getBoolean(KEY_ENABLE_SLEEP_COLOR_FILTER, false),
+            enableWaveToWake = prefs.getBoolean(KEY_ENABLE_WAVE_TO_WAKE, false),
             customClockStyle = loadCustomClockStyle(),
             savedCustomClockStyles = loadSavedCustomClockStyles()
             ),
@@ -160,6 +166,21 @@ class StandTimeViewModel(
             is StandTimeIntent.SetTapRevealInfo -> {
                 _uiState.update { state -> state.copy(enableTapRevealInfo = intent.enabled) }
                 prefs.edit().putBoolean(KEY_ENABLE_TAP_REVEAL_INFO, intent.enabled).apply()
+            }
+
+            is StandTimeIntent.SetAutoDimNightMode -> {
+                _uiState.update { state -> state.copy(enableAutoDimNightMode = intent.enabled) }
+                prefs.edit().putBoolean(KEY_ENABLE_AUTO_DIM_NIGHT_MODE, intent.enabled).apply()
+            }
+
+            is StandTimeIntent.SetSleepColorFilter -> {
+                _uiState.update { state -> state.copy(enableSleepColorFilter = intent.enabled) }
+                prefs.edit().putBoolean(KEY_ENABLE_SLEEP_COLOR_FILTER, intent.enabled).apply()
+            }
+
+            is StandTimeIntent.SetWaveToWake -> {
+                _uiState.update { state -> state.copy(enableWaveToWake = intent.enabled) }
+                prefs.edit().putBoolean(KEY_ENABLE_WAVE_TO_WAKE, intent.enabled).apply()
             }
 
             is StandTimeIntent.LocationPermissionChanged -> {

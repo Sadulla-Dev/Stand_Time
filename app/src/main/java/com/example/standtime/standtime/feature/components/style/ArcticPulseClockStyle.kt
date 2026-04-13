@@ -1,17 +1,11 @@
 package com.example.standtime.standtime.feature.components.style
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,13 +32,7 @@ fun ArcticPulseClockStyle(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "arctic")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing)),
-        label = "t"
-    )
+    val timeSeconds = rememberContinuousAnimationSeconds()
 
     Box(
         modifier = modifier.background(Color(0xFF000812)),
@@ -57,9 +45,9 @@ fun ArcticPulseClockStyle(
 
             // Sonar pulse rings
             for (ring in 0..3) {
-                val phase = (t * 0.6f + ring * 0.7f) % (2 * Math.PI).toFloat()
-                val r = (phase / (2 * Math.PI).toFloat()) * maxR
-                val alpha = (0.7f - (phase / (2 * Math.PI).toFloat()) * 0.7f) * 0.5f
+                val progress = ((timeSeconds * 0.17f) + ring * 0.23f) % 1f
+                val r = progress * maxR
+                val alpha = (0.7f - progress * 0.7f) * 0.5f
                 drawCircle(
                     color = Color(0xFF00DCFF).copy(alpha = alpha),
                     radius = r,
@@ -88,7 +76,7 @@ fun ArcticPulseClockStyle(
             )
 
             // Rotating scanner sweep
-            val scanAngle = t * 0.8f
+            val scanAngle = timeSeconds * 0.82f
             val sweepPath = Path()
             sweepPath.moveTo(cx, cy)
             val sweepSteps = 20
